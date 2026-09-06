@@ -1,0 +1,17 @@
+{
+  "id": "pubdoc",
+  "name": "Pubdoc",
+  "description": "公開ドキュメント共有サーバー。path で複数プロジェクトのスライド・HTML をホスト",
+  "type": "docker",
+  "hostname": "pubdoc.unlaxer.org",
+  "port": 80,
+  "host": "192.168.1.8",
+  "runtime": "docker",
+  "auth": "minRole:MEMBER",
+  "health_check": "/",
+  "compose_file": "docker-compose.yml",
+  "compose_service": "pubdoc",
+  "tags": ["docs", "html", "static", "slides", "presentation"],
+  "repo_url": "https://github.com/opaopa6969/pubdoc",
+  "icon": "si-document"
+}
