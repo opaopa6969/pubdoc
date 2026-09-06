@@ -4,7 +4,7 @@
   "description": "公開ドキュメント共有サーバー。path で複数プロジェクトのスライド・HTML をホスト",
   "type": "docker",
   "hostname": "pubdoc.unlaxer.org",
-  "port": 80,
+  "port": 8795,
   "host": "192.168.1.8",
   "runtime": "docker",
   "auth": "minRole:MEMBER",

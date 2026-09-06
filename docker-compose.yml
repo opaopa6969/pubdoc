@@ -1,17 +1,15 @@
-version: "3.8"
-
 services:
   pubdoc:
     build: .
     container_name: pubdoc
     ports:
-      - "80:80"
+      - "8795:80"
     volumes:
       - ./docs:/usr/share/nginx/html:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
-      interval: 10s
+      interval: 30s
       timeout: 3s
       retries: 3
       start_period: 5s
