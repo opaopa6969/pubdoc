@@ -8,6 +8,9 @@
   "host": "192.168.1.8",
   "runtime": "docker",
   "auth": "minRole:MEMBER",
+  "auth_rules": [
+    { "prefix": "/public", "auth": "public" }
+  ],
   "health_check": "/",
   "compose_file": "docker-compose.yml",
   "compose_service": "pubdoc",

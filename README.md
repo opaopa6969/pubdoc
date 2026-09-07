@@ -1,84 +1,72 @@
-# pubdoc — 公開ドキュメント共有
+# pubdoc — 資料をパスで配る静的サーバ
 
-複数プロジェクトのスライド・HTML をパス分けでホストする静的ファイルサーバ。
+勉強会スライドやドキュメントを、プロジェクトごとのパスに置いて配るための nginx。
+**`/public` はログイン不要、それ以外は要ログイン**。
 
-## 構成
+```
+https://pubdoc.unlaxer.org/public/<project>/...    ← 誰でも開ける
+https://pubdoc.unlaxer.org/private/<project>/...   ← MEMBER 以上
+```
+
+## ディレクトリ構成
 
 ```
 docs/
-├── address-lore/           ← address-lore 勉強会スライド等
-│   └── address-lore-study-session.html
-├── other-project/          ← 別プロジェクトのドキュメント
-│   └── slide.html
-└── index.html              ← ルート（オプション）
+├── index.html                  トップ（public / private への入口）
+├── public/
+│   └── index.html              公開資料の一覧
+└── private/
+    ├── index.html              非公開資料の一覧
+    └── address-lore/
+        └── address-lore-study-session.html
 ```
 
-## 使い方
+`docs/` がそのまま公開ルート。**階層を新しく作ったら `index.html` も置く**
+（ディレクトリ一覧を出さない設定なので、無いと 403 になる）。
 
-### 1. ドキュメントを追加
+## 資料を追加する
 
 ```bash
-# 例：address-lore のスライド
-cp ~/work/address-lore/docs/address-lore-study-session.html docs/address-lore/
+# 公開してよいもの
+cp ~/slide.html docs/public/myproject/
+# 社内向け・非公開 repo 由来のもの
+cp ~/slide.html docs/private/myproject/
 
-# git で管理
-git add docs/address-lore/
-git commit -m "add: address-lore study session slide"
-git push origin master
+git add docs/ && git commit -m "add: myproject slide" && git push
 ```
 
-### 2. アクセス
+`docs/` は nginx に read-only マウントしているので、**コミットした時点で反映**される
+（コンテナの再起動もデプロイも不要）。
 
-```
-https://pubdoc.unlaxer.org/address-lore/address-lore-study-session.html
-```
-
-### 3. ディレクトリ構成の例
-
-```
-docs/
-├── address-lore/
-│   ├── address-lore-study-session.html     ← 40分勉強会
-│   └── README.md
-├── kamishibai/
-│   └── slide.html
-├── wavepp/
-│   └── tutorial.html
-└── index.html
-```
-
-## デプロイ
+## ローカルで確認
 
 ```bash
-# docker でローカル確認
-docker-compose up --build
-
-# volta に登録（volta-platform で手動設定）
-# または CI/CD で自動デプロイ
+docker compose up -d --build
+curl -I http://localhost:8795/public/
 ```
 
-## 仕様
+## 認証の仕組み
 
-- **サーバ**: nginx (Alpine)
-- **ポート**: 80 (HTTP)
-- **ホスト**: pubdoc.unlaxer.org
-- **ルートディレクトリ**: docs/
-- **インデックス**: index.html（自動）
+ルート全体は `minRole: MEMBER`、`/public` だけ volta-gateway の
+[`auth_rules`](https://github.com/opaopa6969/volta-gateway) で認証を外している。
 
-## ライフサイクル
+```yaml
+# prod: /home/opa/volta-gateway/volta-gateway.yaml
+- host: pubdoc.unlaxer.org
+  backend: http://192.168.1.8:8795
+  min_role: MEMBER
+  auth_rules:
+  - prefix: /public
+    auth: public
+```
 
-- docs/ に新しいファイルを置く
-- `git push` で更新
-- nginx は docs/ をマウント（`-v ./docs:/usr/share/nginx/html:ro`）
-- 即座に反映（再デプロイ不要）
+`volta.service.json` にも同じ `auth_rules` を宣言してある。これが `svc_add` 経由で
+効くのは **prod の volta-platform が volta-platform#133 以降に更新されてから**。
+それまでは上記の yaml が実効値（generator は未宣言扱いで手編集値を温存する）。
 
-## 将来の拡張
+## 注意
 
-- index.html で全ドキュメント一覧を動的生成
-- プロジェクト別フィード
-- 検索機能
-- アクセスログ
-
----
-
-**管理者**: opa@caulis.jp
+- **ホスト側ポートは 8795**。`:80` は volta-gateway 自身なので使えない
+  （割り当てると gateway を壊すか、ルートが自己ループして 400 になる）
+- スライドの元 Markdown は各プロジェクト側に置く。ここは配信物だけ
+  （例: address-lore は `~/work/address-lore/docs/*.md` → `npm run build:slide`）
