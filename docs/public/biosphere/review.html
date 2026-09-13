@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>種の黎明 評価レポート — 直すべき数字はひとつ</title>
+<meta name="description" content="メカ生物RTS『種の黎明 — BIOSPHERE』を2試合遊び、ゲームエンジンを1,300戦回して書いた開発者向けの評価。支配戦略の原因はAIの定数ひとつであり、それを直すと勝利条件の設計に第2の問題が現れる。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Serif+JP:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#08110f; --bg2:#0d1a17; --panel:#11211d; --panel2:#152a24;
+  --line:#24413a; --line2:#2f5348;
+  --ink:#e6efe9; --ink2:#a9c0b6; --ink3:#7d968c;
+  --gold:#e9c77b; --leaf:#a8c98f; --cyan:#7fd4d0; --rose:#e39a86; --violet:#b7a3eb;
+  --muted-mark:#406054;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:"Noto Sans JP",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-size:16px; line-height:1.85; letter-spacing:.01em; -webkit-font-smoothing:antialiased;
+}
+img{max-width:100%; display:block}
+a{color:var(--leaf)}
+a:hover{color:var(--gold)}
+
+.hero{position:relative; min-height:min(64vh,520px); display:flex; align-items:flex-end; overflow:hidden; border-bottom:1px solid var(--line)}
+.hero img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:60% 45%; opacity:.3}
+.hero::after{content:""; position:absolute; inset:0; background:
+  linear-gradient(180deg,rgba(8,17,15,.6) 0%,rgba(8,17,15,.25) 35%,rgba(8,17,15,.97) 100%),
+  linear-gradient(95deg,rgba(8,17,15,.9) 0%,rgba(8,17,15,.55) 45%,rgba(8,17,15,.2) 80%)}
+.hero-inner{position:relative; z-index:2; width:100%; max-width:1040px; margin:0 auto; padding:52px 24px 40px}
+.kicker{font-family:var(--mono); font-size:12px; letter-spacing:.24em; color:var(--gold); text-transform:uppercase; margin-bottom:16px}
+.hero h1{font-family:"Noto Serif JP",serif; font-size:clamp(28px,5vw,50px); line-height:1.25; margin:0 0 12px; font-weight:700}
+.hero h1 small{display:block; font-size:clamp(14px,2vw,18px); color:var(--ink2); font-weight:500; margin-top:12px; font-family:"Noto Sans JP",sans-serif; line-height:1.65}
+.hero-meta{display:flex; flex-wrap:wrap; gap:8px 18px; font-size:12.5px; color:var(--ink3); font-family:var(--mono); margin-top:20px}
+.hero-meta b{color:var(--leaf); font-weight:500}
+
+main{max-width:1040px; margin:0 auto; padding:0 24px 96px}
+section{padding-top:60px}
+h2{font-family:"Noto Serif JP",serif; font-size:clamp(21px,3.2vw,29px); line-height:1.4; margin:0 0 6px; font-weight:700}
+h2 .num{display:block; font-family:var(--mono); font-size:12px; letter-spacing:.22em; color:var(--gold); font-weight:400; margin-bottom:10px}
+h3{font-size:clamp(16.5px,2.3vw,20px); margin:40px 0 10px; font-weight:700; border-left:3px solid var(--leaf); padding-left:12px; line-height:1.5}
+h4{font-size:15.5px; margin:26px 0 6px; color:var(--leaf); font-weight:700}
+p{margin:0 0 18px}
+.lead{font-size:17.5px; color:var(--ink2); line-height:1.9}
+strong{color:#fff; font-weight:700}
+em{font-style:normal; color:var(--gold); font-weight:500}
+code{font-family:var(--mono); font-size:.88em; background:#0b1a16; border:1px solid var(--line); border-radius:4px; padding:1px 6px; color:var(--cyan)}
+hr{border:0; border-top:1px solid var(--line); margin:54px 0}
+ul,ol{padding-left:22px} li{margin-bottom:8px}
+
+.toc{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:24px 26px; margin:40px 0 0}
+.toc h2{font-size:13px; font-family:var(--mono); letter-spacing:.2em; color:var(--gold); margin:0 0 14px}
+.toc ol{margin:0; padding-left:0; list-style:none; counter-reset:toc; columns:2; column-gap:34px}
+.toc li{counter-increment:toc; margin-bottom:9px; break-inside:avoid; font-size:14.5px}
+.toc li::before{content:counter(toc,decimal-leading-zero); font-family:var(--mono); font-size:11px; color:var(--gold); margin-right:10px}
+.toc a{color:var(--ink2); text-decoration:none}
+.toc a:hover{color:var(--gold)}
+@media(max-width:680px){.toc ol{columns:1}}
+
+.key{background:linear-gradient(135deg,#13291f,#112420); border:1px solid #35624a; border-left:4px solid var(--leaf); border-radius:10px; padding:22px 26px; margin:28px 0}
+.key .label{font-family:var(--mono); font-size:11px; letter-spacing:.2em; color:var(--leaf); display:block; margin-bottom:8px}
+.key p:last-child,.key ul:last-child{margin-bottom:0}
+.warn{background:#2a1a16; border:1px solid #6b4030; border-left:4px solid var(--rose); border-radius:10px; padding:20px 24px; margin:26px 0}
+.warn .label{font-family:var(--mono); font-size:11px; letter-spacing:.2em; color:var(--rose); display:block; margin-bottom:8px}
+.warn p:last-child{margin-bottom:0}
+.note{font-size:13.5px; color:var(--ink3); line-height:1.75; border-left:2px solid var(--line2); padding-left:14px; margin:22px 0}
+
+.tw{overflow-x:auto; margin:26px 0; border:1px solid var(--line); border-radius:10px; background:var(--panel)}
+table{border-collapse:collapse; width:100%; font-size:14px; min-width:480px}
+caption{caption-side:top; text-align:left; font-size:12.5px; color:var(--ink3); padding:14px 18px 0; font-family:var(--mono)}
+th,td{padding:10px 14px; text-align:left; border-bottom:1px solid var(--line); white-space:nowrap}
+thead th{background:#0e1e1a; color:var(--gold); font-family:var(--mono); font-size:11.5px; letter-spacing:.08em; font-weight:400; border-bottom:1px solid var(--line2)}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:#13241f}
+td.num,th.num{text-align:right; font-family:var(--mono)}
+.win{color:var(--leaf); font-weight:700}
+.lose{color:var(--rose)}
+.dim{color:var(--ink3)}
+.hl td{background:#16301f}
+
+/* ---- stat tiles ---- */
+.stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:14px; margin:30px 0}
+.stat{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:22px 22px 20px}
+.stat .v{font-family:var(--mono); font-size:clamp(30px,5vw,40px); line-height:1.1; color:var(--leaf); font-weight:500; letter-spacing:-.02em}
+.stat .v small{font-size:.5em; color:var(--ink3); margin-left:4px; letter-spacing:0}
+.stat .k{font-size:13px; color:var(--ink2); margin-top:10px; line-height:1.6}
+.stat .s{font-size:11.5px; color:var(--ink3); margin-top:6px; font-family:var(--mono)}
+
+/* ---- chart ---- */
+.chart{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:26px 24px 18px; margin:30px 0}
+.chart-title{font-size:15.5px; font-weight:700; margin:0 0 4px}
+.chart-sub{font-size:13px; color:var(--ink3); margin:0 0 18px; line-height:1.6}
+.chart svg{width:100%; height:auto; display:block; overflow:visible}
+.chart svg rect[data-bar]{transition:opacity .15s}
+.chart svg g:hover rect[data-bar]{opacity:.78}
+.chart-note{font-size:12.5px; color:var(--ink3); margin:14px 0 0; line-height:1.65}
+
+figure{margin:30px 0}
+figure img{border-radius:10px; border:1px solid var(--line)}
+figcaption{font-size:13px; color:var(--ink3); margin-top:10px; line-height:1.7}
+figcaption b{color:var(--leaf); font-weight:500}
+
+.verdict{display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:14px; margin:26px 0}
+.vcard{border:1px solid var(--line); border-radius:12px; background:var(--panel); padding:20px 22px}
+.vcard .h{font-family:var(--mono); font-size:11px; letter-spacing:.16em; margin-bottom:10px}
+.vcard.good .h{color:var(--leaf)}
+.vcard.bad .h{color:var(--rose)}
+.vcard p{margin:0; font-size:14px; line-height:1.75; color:var(--ink2)}
+
+.fix{list-style:none; padding:0; margin:26px 0; counter-reset:fix}
+.fix li{counter-increment:fix; position:relative; padding-left:46px; margin-bottom:22px}
+.fix li::before{content:counter(fix); position:absolute; left:0; top:2px; width:30px; height:30px; border-radius:50%; border:1px solid var(--line2); color:var(--gold); font-family:var(--mono); font-size:13px; display:grid; place-items:center; background:var(--panel)}
+.fix b{display:block; margin-bottom:4px}
+.fix p{margin:0; font-size:14.5px; color:var(--ink2)}
+.fix .cost{display:inline-block; font-family:var(--mono); font-size:11px; color:var(--ink3); border:1px solid var(--line); border-radius:20px; padding:1px 10px; margin-left:8px; vertical-align:middle}
+
+footer{border-top:1px solid var(--line); background:var(--bg2); padding:44px 24px 64px; font-size:13.5px; color:var(--ink3); line-height:1.85}
+footer .inner{max-width:1040px; margin:0 auto}
+footer h3{border:0; padding:0; color:var(--ink2); font-size:14px; margin:0 0 12px}
+footer ul{padding-left:20px; margin:0 0 18px}
+
+@media(max-width:640px){
+  body{font-size:15px}
+  .hero-inner{padding:38px 20px 30px}
+  main{padding:0 20px 72px}
+  section{padding-top:48px}
+  .key,.warn{padding:18px 20px}
+  th,td{padding:8px 11px}
+  .chart{padding:20px 16px 14px}
+}
+</style>
+</head>
+<body>
+<header class="hero">
+  <img src="images/expansion.webp" alt="種の黎明のゲーム画面。六角形の生態地形に群れが広がっている">
+  <div class="hero-inner">
+    <div class="kicker">BIOSPHERE — 種の黎明 / DESIGN REVIEW</div>
+    <h1>2試合遊んで、2回負けた
+      <small>そのあとエンジンを1,300戦回して分かったこと——このゲームは壊れていない。壊れているのはAIの中の定数ひとつで、それを直すと今度は勝利条件の設計に第2の問題が現れる。</small>
+    </h1>
+    <div class="hero-meta">
+      <span>ルール指紋 <b>12013311</b></span>
+      <span>実プレイ <b>2試合（2敗）</b></span>
+      <span>エンジン検証 <b>1,300戦超</b></span>
+      <span>2026-09-13</span>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<nav class="toc">
+  <h2>Contents</h2>
+  <ol>
+    <li><a href="#s1">遊んだ範囲と、負け方</a></li>
+    <li><a href="#s2">良いところ</a></li>
+    <li><a href="#s3">致命的な問題：<code>aiThink</code> の <code>4</code></a></li>
+    <li><a href="#s4">直すと現れる第2の問題</a></li>
+    <li><a href="#s5">遊んで感じた3つの体感問題</a></li>
+    <li><a href="#s6">楽しさの理論に照らす</a></li>
+    <li><a href="#s7">提案（コスト対効果順）</a></li>
+    <li><a href="#s8">総評</a></li>
+  </ol>
+</nav>
+
+<section id="s1">
+<p class="lead" style="margin-top:44px">
+『種の黎明 — BIOSPHERE』を遊んだ。プレイヤー1勢力 + AI5勢力、12分1本勝負の3D RTS。まず実際にUIだけを触って1試合、次に自動操作で1試合。<strong>どちらも負けた</strong>。そのあと、このゲームが持っている決定論エンジンを直接呼び出して1,300戦以上を回し、なぜ負けたのか、そして<em>なぜ勝ちすぎてしまうのか</em>を測った。これはその報告である。
+</p>
+
+<div class="tw">
+<table>
+<caption>遊んだ範囲</caption>
+<thead><tr><th>遊び方</th><th>結果</th></tr></thead>
+<tbody>
+<tr><td>実UI操作のみ・哺乳類・均衡する世界・720秒・<strong>238クリック</strong></td><td class="lose">敗北。極相まで進化したが領土9・源泉0、食料が10,113余った</td></tr>
+<tr><td>自動操作・哺乳類・均衡する世界・554秒</td><td class="lose">敗北。個体111・誕生120体まで膨らませたが源泉1・第I段階のまま</td></tr>
+<tr><td>エンジン直接（戦闘実験・方針掃引・緊張感の測定）</td><td>1,300戦超</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>
+2つの負け方は正反対だった。<strong>1試合目は内政と進化に寄りすぎて拡張が止まり、食料が1万も余った。2試合目は逆に拡張だけして進化が一度も走らなかった。</strong>どちらも「勝利条件＝源泉3つを90秒」に指が届いていない。この2敗が、あとで書く問題の予告になっている。
+</p>
+
+<figure>
+<img src="images/result.webp" alt="対戦結果画面。節足動物の勝利、こちらは敗北">
+<figcaption><b>2試合目の結末。</b>節足動物が源泉5つを90/90秒保持して勝利。こちらは誕生120体（全勢力で最多）を出しながら、繁栄度415対961のダブルスコアで負けた。<strong>物量では勝っていて、勝負では負けている</strong>——この乖離がこのゲームの現状をよく表している。</figcaption>
+</figure>
+
+<p>
+先に結論を書く。<strong>このゲームは壊れていない。</strong>ルールの骨格は良くできているし、後述するとおり盤面は十分に揺れている。問題は一点に集中していて、それは<code>src/core/engine.js</code> の <code>aiThink</code> にある <strong>4</strong> という数字である。
+</p>
+</section>
+
+<hr>
+
+<section id="s2">
+<h2><span class="num">01</span>良いところ</h2>
+
+<h3>ルールの圧縮率が高い</h3>
+<p>
+3資源・4役割・5段階・5地形。覚えることは少ないのに、<em>三すくみ2.4倍 × 地形適性 × 進化段階 × 守備補正</em>の掛け算で戦術が立体になる。とりわけ良いのは力関係の順序で、<strong>相性2.4倍は進化4段階分より強い</strong>。実測すると、最強である極相（第5段階）の捕食種10体が、最弱である原始（第1段階）の守護種10体に負ける。
+</p>
+<div class="key">
+<span class="label">設計として上手い点</span>
+<p>これは<strong>格上に勝てる余地を常に残す</strong>ということだ。「進化で負けているから勝てない」が成立しない構造になっていて、遅れている側にも打つ手がある。RTSの内政差は雪だるま式に開きやすいが、相性がその傾きを緩めている。</p>
+</div>
+
+<h3>情報設計</h3>
+<p>
+画面左の「源泉をめぐる競争」パネルで、6勢力の段階・源泉数・保持秒数が一望できる。勝利条件が「源泉3つを90秒」である以上、<strong>この1枚があれば盤面の危険度が読める</strong>——HUDとして狙いが定まっている。「編成と相性を見る」を開くと時間が止まる配慮も、ホットキー（1〜4／M／N／E／Space）が揃っているのも良い。初見評価レポートにあった「敗北理由が分からない」という指摘は、結果画面に勝利条件名と全系統の到達点が出る形で解消されていた。
+</p>
+
+<h3>盤面の骨格は、ちゃんと緊張感がある</h3>
+<p>ここは測って驚いた点だ。AI同士24戦を1tickずつ追いかけて、逆転と妨害の頻度を数えた。</p>
+
+<div class="stats">
+  <div class="stat">
+    <div class="v">40.9<small>%</small></div>
+    <div class="k">300秒時点の首位が、そのまま勝つ確率</div>
+    <div class="s">＝ 逆転が59%（24戦中13戦）</div>
+  </div>
+  <div class="stat">
+    <div class="v">11.2<small>回</small></div>
+    <div class="k">1試合あたり、源泉の保持カウントが0に戻される回数</div>
+    <div class="s">30秒以上を失うのは1.5回／最大83秒</div>
+  </div>
+  <div class="stat">
+    <div class="v">550<small>秒</small></div>
+    <div class="k">平均決着時間（上限720秒）</div>
+    <div class="s">最短175秒／最長720秒</div>
+  </div>
+</div>
+
+<p>
+「源泉を3つ取ったら勝ち確」という展開ではまったくない。あと7秒で勝ちという83秒の保持が吹き飛んだ試合もあった。<strong>ルールが生む盤面のダイナミクスは、すでに面白い。</strong>この事実が、次章の問題を「設計の失敗」ではなく「調整の失敗」と呼べる根拠になっている。
+</p>
+</section>
+<hr>
+
+<section id="s3">
+<h2><span class="num">02</span>致命的な問題：<code>aiThink</code> の <code>4</code></h2>
+
+<p>
+AIは巣の採集種が<strong>4体</strong>に達すると、以降は戦闘役割しか作らない（<code>t.units[0]&lt;4?0:…</code>）。ところがこの4体は、繁殖を切らさない下限を下回っている。
+</p>
+<p>
+巣が途切れずに個体を生み続けるのに要る食料は、一番高い遊撃種で<strong>毎秒4.5</strong>。採集種1体の純収入は、開始区画（地形適性1.2固定）の水辺で<strong>毎秒0.695</strong>。割ると<strong>6.5体</strong>——つまり7体ないと巣は止まる。<strong>全AIが、恒常的に内政不全のまま戦っている。</strong>
+</p>
+
+<p>そこで、AIのこの定数だけを変えて測った。プレイヤー側の方針（採集種7体を維持する以外はAIと同一のロジック）は固定、哺乳類、各16戦。</p>
+
+<div class="chart">
+<p class="chart-title">AIの採集種目標を変えると、プレイヤーの勝率はこう動く</p>
+<p class="chart-sub">プレイヤーは「巣ごとに採集種7体」方針で固定。哺乳類・均衡する世界・seed 1〜16。6勢力戦なので期待値は16.7%。</p>
+<svg viewBox="0 0 640 300" role="img" aria-labelledby="c1t c1d">
+  <title id="c1t">AIの採集種目標とプレイヤー勝率</title>
+  <desc id="c1d">AIの採集種目標が4体のときプレイヤーの勝率は100%、6体で68.8%、7体で6.3%、8体で0%。</desc>
+  <g stroke="#24413a" stroke-width="1">
+    <line x1="60" y1="240" x2="620" y2="240"/>
+    <line x1="60" y1="186" x2="620" y2="186"/>
+    <line x1="60" y1="132" x2="620" y2="132"/>
+    <line x1="60" y1="78" x2="620" y2="78"/>
+    <line x1="60" y1="24" x2="620" y2="24"/>
+  </g>
+  <g fill="#7d968c" font-size="11" font-family="ui-monospace,monospace" text-anchor="end">
+    <text x="48" y="244">0%</text><text x="48" y="190">25%</text><text x="48" y="136">50%</text><text x="48" y="82">75%</text><text x="48" y="28">100%</text>
+  </g>
+  <!-- bars: 4px rounded data-end, square at baseline -->
+  <g>
+    <title>AI採集4体（現在の実装）: プレイヤー勝率 100%（16勝0敗）</title>
+    <path data-bar d="M118,240 L118,28 Q118,24 122,24 L138,24 Q142,24 142,28 L142,240 Z" fill="#a8c98f"/>
+    <text x="130" y="16" fill="#e6efe9" font-size="13" font-family="ui-monospace,monospace" text-anchor="middle" font-weight="700">100%</text>
+  </g>
+  <g>
+    <title>AI採集6体: プレイヤー勝率 68.8%（11勝5敗）</title>
+    <path data-bar d="M258,240 L258,95.4 Q258,91.4 262,91.4 L278,91.4 Q282,91.4 282,95.4 L282,240 Z" fill="#a8c98f"/>
+    <text x="270" y="83" fill="#a9c0b6" font-size="13" font-family="ui-monospace,monospace" text-anchor="middle">68.8%</text>
+  </g>
+  <g>
+    <title>AI採集7体: プレイヤー勝率 6.3%（1勝15敗）</title>
+    <path data-bar d="M398,240 L398,230.4 Q398,226.4 402,226.4 L418,226.4 Q422,226.4 422,230.4 L422,240 Z" fill="#a8c98f"/>
+    <text x="410" y="218" fill="#e6efe9" font-size="13" font-family="ui-monospace,monospace" text-anchor="middle" font-weight="700">6.3%</text>
+  </g>
+  <g>
+    <title>AI採集8体: プレイヤー勝率 0%（0勝16敗）</title>
+    <rect data-bar x="538" y="238" width="24" height="2" fill="#406054"/>
+    <text x="550" y="230" fill="#a9c0b6" font-size="13" font-family="ui-monospace,monospace" text-anchor="middle">0%</text>
+  </g>
+  <g fill="#a9c0b6" font-size="12.5" font-family="'Noto Sans JP',sans-serif" text-anchor="middle">
+    <text x="130" y="264">4体</text><text x="270" y="264">6体</text><text x="410" y="264">7体</text><text x="550" y="264">8体</text>
+  </g>
+  <g font-size="11" font-family="ui-monospace,monospace" text-anchor="middle">
+    <text x="130" y="282" fill="#e9c77b">現在の実装</text>
+    <text x="410" y="282" fill="#e9c77b">理論値 6.5 の切り上げ</text>
+  </g>
+</svg>
+<p class="chart-note">数値表は下のとおり。AI=7のときの平均源泉数は1.19で、勝利条件（3つ）に手が届いていない。</p>
+</div>
+
+<div class="tw">
+<table>
+<caption>AIの採集種目標とプレイヤーの成績（哺乳類・seed 1〜16・normal）</caption>
+<thead><tr><th>AIの採集種目標</th><th class="num">プレイヤー勝率</th><th class="num">平均源泉</th><th class="num">平均個体数</th></tr></thead>
+<tbody>
+<tr class="hl"><td>4体 <span class="dim">（現在の実装）</span></td><td class="num lose">100%</td><td class="num">5.06</td><td class="num">104.7</td></tr>
+<tr><td>6体</td><td class="num">68.8%</td><td class="num">4.19</td><td class="num">94.5</td></tr>
+<tr class="hl"><td>7体</td><td class="num win">6.3%</td><td class="num">1.19</td><td class="num">38.6</td></tr>
+<tr><td>8体</td><td class="num">0%</td><td class="num">0.63</td><td class="num">25.4</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>
+AI=7にした状態での系統別勝率は <strong>6.3%〜37.5%</strong>（6勢力戦の期待値は16.7%）。<strong>支配戦略が消え、バランスが一気に妥当な範囲へ入る。</strong>この1つの数字が、ゲーム全体を「解けている」状態に固定していた。
+</p>
+
+<div class="warn">
+<span class="label">派生する、もっと厄介な問題</span>
+<p>
+同梱の <code>artifacts/balance.json</code> にある系統別勝率——魚類22.2%、鳥類5.6%、恐竜20.8%——は、<strong>全員が内政不全のAI同士で取った相対値</strong>である。この定数を直せば、その数字は全部変わる。<strong>現在のDSL調整は、動いている土台の上で行われている。</strong>まずAIを直し、それから測り直さないと、どの系統が強いのかという問い自体が意味を持たない。
+</p>
+</div>
+</section>
+
+<hr>
+
+<section id="s4">
+<h2><span class="num">03</span>直すと現れる第2の問題</h2>
+
+<p>では、AIの内政を直せば解決なのか。そうではなかった。AI=7の環境で、今度はプレイヤー側の方針を9通り振り直した。</p>
+
+<div class="tw">
+<table>
+<caption>プレイヤーの方針別勝率（哺乳類・seed 1〜16）／ 左：現在のAI　右：内政を直したAI</caption>
+<thead><tr><th>プレイヤーの方針</th><th class="num">AI採集4体（現在）</th><th class="num">AI採集7体（修正後）</th></tr></thead>
+<tbody>
+<tr><td>採集7体・標準</td><td class="num">100%</td><td class="num">6.3%</td></tr>
+<tr class="hl"><td><strong>源泉を無視して面を広げる</strong></td><td class="num">43.8%</td><td class="num win">50.0%</td></tr>
+<tr><td>源泉を最優先</td><td class="num">81.3%</td><td class="num lose">0%</td></tr>
+<tr><td>進化を急ぐ</td><td class="num">87.5%</td><td class="num">18.8%</td></tr>
+<tr><td>慎重に攻める</td><td class="num">93.8%</td><td class="num">25.0%</td></tr>
+<tr><td>強気に攻める</td><td class="num">100%</td><td class="num lose">0%</td></tr>
+<tr><td>源泉に厚く常駐</td><td class="num">93.8%</td><td class="num">6.3%</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="key">
+<span class="label">何が起きたか</span>
+<p>
+AIが強くなると源泉は激戦区になり、そこへ向かう方針が<strong>最下位（0%）</strong>に落ちる。代わりに最強になったのは<strong>「源泉を無視して安全な土地を広げる」（50%）</strong>——平均源泉2.06、つまり勝利条件を満たさないまま、<em>720秒の時間切れを繁栄度で拾って勝っている</em>。
+</p>
+</div>
+
+<p>
+繁栄度は <code>所有地 × 12 + 個体数 × 2 + (段階 − 1) × 18 + 源泉 × 25</code>。源泉1つは<strong>領土2枚ぶん</strong>でしかない。命がけで奪い合う対象の値段としては安すぎる。結果、AIを強くするほど「源泉に近寄らないのが正解」という、<strong>勝利条件が形骸化した状態</strong>に寄っていく。
+</p>
+
+<div class="key">
+<span class="label">結論</span>
+<p><strong>修正は2段階でなければ意味がない。</strong>① AIの内政を直す → ② 源泉の価値を上げるか、時間切れの繁栄度勝ちを見直す。片方だけだと、支配戦略が「内政一辺倒」から「源泉無視の面取り」へ移るだけで終わる。</p>
+</div>
+</section>
+
+<hr>
+
+<section id="s5">
+<h2><span class="num">04</span>遊んで感じた3つの体感問題</h2>
+
+<h3>① 作業が判断を圧迫する</h3>
+<p>
+実UIで720秒遊んで<strong>238クリック</strong>（2.8秒に1回）。その大半は「巣を選択 → 数字キー」の繁殖補充だった。予約は巣ごと4体まで、1体4〜6秒で生まれるので、巣が4つあれば20秒に1回どこかが空く。<strong>巣を増やすほど、判断ではなく手数が増える。</strong>
+</p>
+<p>
+このゲームは「群れの半数／全数」という粗い命令でマイクロ操作を排した設計のはずで、その判断は良い。それなのに<em>繁殖キューの管理でAPMが効いてしまう</em>のは、設計思想と実装がねじれている。実際、エンジン上で勝率100%を出した方針も、人間が手で再現するには「5秒ごとに全タイルを再評価する」精度が要る。それは操作の勝負であって、戦略の勝負ではない。
+</p>
+
+<h3>② 進化の錯覚 — 表示上の強さと実際の強さが逆を向いている</h3>
+<p>
+AIは内政が薄いぶん、余った資源を進化に回す。だから3分でⅣ〜Ⅴ段階に達する。プレイヤーから見れば「置いていかれている」と焦る場面だ。ところが実際は逆で、<strong>内政を厚くした側が勝つ</strong>。私の2試合目は第I段階のまま個体111を並べ、AIは全員Ⅲ〜Ⅴ段階だった。
+</p>
+<div class="warn">
+<span class="label">学習の手がかりとして最悪</span>
+<p>プレイヤーが最も目立つ指標（段階）を見て焦り、その焦りが<em>間違った行動</em>（進化を急ぐ）を誘発する。初見評価レポートでも「AIが3分でⅣ〜Ⅴ段階、初見プレイヤーは2段階で終了」と記録されていた。ゲームは<strong>プレイヤーが読み取れる信号と、実際の強さを一致させる</strong>必要がある。</p>
+</div>
+
+<h3>③ 妨害が位置取りに依存しすぎる</h3>
+<p>
+実プレイ中にこんなログが出た——<strong>「節足動物が源泉4つ・28秒保持 → 妨害不能（隣接する自領土がない）」</strong>。
+</p>
+<p>
+敵の90秒カウントは1体の到着で0に戻る。これは強力な対抗手段だが、<em>隣接する自領土がなければ発動すらできない</em>。鳥類だけは第2段階から2区画をまたげるが、他の5系統は1区画。つまり<strong>妨害できるかどうかは、その瞬間の判断ではなく、数分前の布陣で決まっている</strong>。負けが見えてから打てる手がない、という体験になる。
+</p>
+</section>
+<hr>
+
+<section id="s6">
+<h2><span class="num">05</span>楽しさの理論に照らす</h2>
+
+<p>
+このゲームが置かれている game-engine-suite には<a href="https://github.com/opaopa6969/game-engine-suite/blob/main/docs/fun-theory.md">「楽しさの理論」</a>という北極星がある。<em>楽しさ＝学習可能な不確実性を解く快感。尽きない源は他者の心。継続性＝時間スケールの違うループの入れ子 × 結果の蓄積。</em>そのコンパスで見るとこうなる。
+</p>
+
+<div class="tw">
+<table>
+<caption>fun-theory の5つの問い</caption>
+<thead><tr><th>問い</th><th>現状の答え</th></tr></thead>
+<tbody>
+<tr><td>不確実性は何でできているか</td><td class="lose">地形seedと固定ポリシーAIのみ。心はない</td></tr>
+<tr><td>それは学習可能か</td><td>可能すぎる。1日で解けた</td></tr>
+<tr><td>何が蓄積するか</td><td class="lose">何も。12分の使い捨て</td></tr>
+<tr><td>誰がフローの境界に乗せ続けるか</td><td class="lose">directorなし。難易度はAIの思考間隔と初撃時刻のみ</td></tr>
+<tr><td>上達は頭打ちにならないか</td><td class="lose">なる。mirrorがない。同じ手が何度でも通る</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>
+ただしこれは「fun-theoryを実装していない」という指摘であって、独立作品への不当な要求かもしれない。むしろ強調したいのは逆の話だ。<strong>逆転59%・1試合11回のカウントリセットという数字は、盤面がすでに十分に揺れていることを示している。</strong>足りないのは相手の心だけで、それは suite にエンジンが揃っている領域である。
+</p>
+
+<div class="verdict">
+  <div class="vcard good">
+    <div class="h">既にあるもの</div>
+    <p>揺れる盤面・相性が進化を上回る力関係・読みやすいHUD・決定論エンジンと再現性。<strong>面白さの器はできている。</strong></p>
+  </div>
+  <div class="vcard bad">
+    <div class="h">足りないもの</div>
+    <p>6勢力が全員同じ思考をしている（＝不確実性ゼロ）、試合をまたいで残るものがない、AIがプレイヤーを学ばない。<strong>器に入れる中身がない。</strong></p>
+  </div>
+</div>
+</section>
+
+<hr>
+
+<section id="s7">
+<h2><span class="num">06</span>提案（コスト対効果順）</h2>
+
+<ol class="fix">
+<li>
+  <b>AIの採集種目標を、地形と系統から計算させる<span class="cost">実質1関数</span></b>
+  <p><code>ceil(4.5 × 繁殖倍率 ÷ (0.5 × 地形food × 適性 − 0.025))</code> を3〜9でクランプ。支配戦略が消え、系統別勝率が6.3〜37.5%の妥当な範囲へ入る。<strong>そのうえで <code>npm run balance</code> を取り直す。</strong>現在のバランス数値は調整の土台に使えない。</p>
+</li>
+<li>
+  <b>源泉の価値を上げる<span class="cost">DSLの数値</span></b>
+  <p>繁栄度の源泉重み25は領土2枚ぶんで安すぎる。倍前後へ引き上げるか、時間切れの繁栄度勝ちを廃して延長戦にする。<strong>1だけを直すと、支配戦略が「源泉無視の面取り」へ移るだけで終わる。</strong></p>
+</li>
+<li>
+  <b>AIに性格を持たせ、seedで割り振る<span class="cost">パラメータ表＋分岐</span></b>
+  <p>6勢力が全員同じポリシーなのが、不確実性ゼロの直接原因。攻撃的／内政型／源泉狙い／日和見の4種を混ぜるだけで、毎回の盤面と隣人の脅威度が変わる。fun-theory で言う「心」の最初の一歩は、ここで安く作れる。</p>
+</li>
+<li>
+  <b>AIに <code>hold</code> 秒数を見せる<span class="cost">スコアに1行</span></b>
+  <p>今のAIは源泉への距離しか見ておらず、<em>勝利間近の勢力を狙って止めに行かない</em>。「保持秒数の高い勢力の源泉を優先的に叩く」加点を入れるだけで、終盤に全員がリーダーへ殺到する緊張が生まれる。RTSのAIとしても自然な振る舞いになる。</p>
+</li>
+<li>
+  <b>巣に「採集種を n 体まで自動維持」トグル<span class="cost">UI＋命令1種</span></b>
+  <p>238クリックの大半を占める作業を消し、判断だけを残す。粗い命令系という設計思想とも一貫する。同時に、AIとプレイヤーが<em>同じ道具</em>を使うことになり、フェアさの説明もしやすい。</p>
+</li>
+<li>
+  <b>戦略の多様性を測る検証を、リポジトリに常設する<span class="cost">スクリプト1本</span></b>
+  <p>今回使った「方針パラメータを振って勝率の幅を見る」測定を <code>npm run</code> に入れておけば、DSLを触るたびに<strong>「複数の戦略に価値があるか」を機械が判定できる</strong>。勝率の幅が広すぎれば支配戦略があり、狭すぎれば判断が無意味ということになる。</p>
+</li>
+<li>
+  <b>中期：蓄積と学習<span class="cost">suiteの接続</span></b>
+  <p>試合をまたいで残るもの（relation／rumor）と、プレイヤーを学び返すAI（mirror）。ここまで来て初めて fun-theory の作品になる。器はもうできている。</p>
+</li>
+</ol>
+</section>
+
+<hr>
+
+<section id="s8">
+<h2><span class="num">07</span>総評</h2>
+
+<p class="lead">
+エンジンとしては相当良い。ゲームとしてはまだ解けている。
+</p>
+<p>
+決定論・リプレイ・checksum照合・DSL正本・120モデルのバイト再現性と、品質管理の設計は本気で作られている。私が1日で1,300戦を回して内部構造を測れたのは、この作りのおかげだ。見た目も、六角の生態地形に群れが散る画は素直に綺麗だった。
+</p>
+<p>
+一方で、遊びとしては「内政の量がすべてを決める」一次元に潰れている。そして<strong>その原因はデザインの失敗ではなく、AIの中の <code>4</code> という数字ひとつ</strong>である。ここを直せば、すでに持っている骨格——逆転59%、1試合11回のカウントリセット——がプレイヤー相手にもそのまま立ち上がるはずだ。そして直したあとに現れる<em>源泉と繁栄度の綱引き</em>のほうが、設計者にとってずっと面白い問題だと思う。
+</p>
+<div class="key">
+<span class="label">一行でまとめると</span>
+<p><strong>「面白さの器はできている。あとは中身を6人ぶん用意するだけ」</strong>——6勢力が全員同じ思考をしている限り、このゲームの不確実性はゼロのままである。</p>
+</div>
+</section>
+
+</main>
+
+<footer>
+<div class="inner">
+<h3>検証方法</h3>
+<p>
+このゲームは描画から独立した決定論エンジン（<code>src/core/engine.js</code>）を持ち、同じseed・同じ命令列なら必ず同じ結果になる。本稿の数値はすべて、そのエンジンを直接呼び出して測ったものである。
+</p>
+<ul>
+<li><b>実プレイ</b>：Chromium（SwiftShader）でUIのみを操作して1試合720秒、238クリック。もう1試合は自動操作で554秒。いずれも敗北。</li>
+<li><b>方針の掃引</b>：標準AIの判断ロジックをプレイヤー側に複製し、パラメータを1つだけ変えて同一seedで対戦。累計1,300戦超。</li>
+<li><b>AI修正の検証</b>：<code>engine.js</code> のコピーを作り、<code>aiThink</code> の採集種目標だけを差し替えて比較（本体には変更を加えていない）。</li>
+<li><b>緊張感の測定</b>：AI同士24戦を1tickずつ追い、300秒時点の首位と最終勝者、保持カウントが0へ落ちた瞬間を記録した。</li>
+<li><b>環境</b>：Node.js 20.20.0 / Linux。ルール指紋 <code>12013311</code>。</li>
+</ul>
+
+<h3>この評価の限界</h3>
+<ul>
+<li>すべて<strong>対AI戦</strong>の話であり、人間同士の対戦は別のゲームになる。指摘した穴の多くは、相手が人間なら存在しない。</li>
+<li>「AIを7体に直すと勝率が適正化する」までは実測だが、<strong>その環境で何が最適になるか</strong>は私が書いた方針ロジックの範囲での結論で、人間はもっと上手くやる可能性がある。</li>
+<li>実機GPUでの動作速度、初見プレイヤーの体験、視覚的完成度については本稿では扱っていない（別の評価記録がある）。</li>
+<li>数値はルール指紋 <code>12013311</code> 時点のもの。DSLが調整されれば変わる。</li>
+</ul>
+
+<p style="margin-top:28px; padding-top:20px; border-top:1px solid var(--line); font-size:12.5px">
+『種の黎明 — BIOSPHERE』開発者向け評価 ／ 2026-09-13 ／ ルール指紋 12013311<br>
+プレイヤー向けの攻略はこちら → <a href="./">種の黎明 攻略 — 採集種7体の壁</a>
+</p>
+</div>
+</footer>
+</body>
+</html>
