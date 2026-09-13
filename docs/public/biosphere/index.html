@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>種の黎明（BIOSPHERE）攻略 — 採集種7体の壁</title>
+<meta name="description" content="6系統120形態のメカ生物RTS『種の黎明 — BIOSPHERE』の攻略。勝率8%から100%へ変える序盤の分岐点、三すくみの実測値、源泉の経済学を、ゲームエンジンを直接叩いた実測データで解説する。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Serif+JP:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#08110f; --bg2:#0d1a17; --panel:#11211d; --panel2:#152a24;
+  --line:#24413a; --line2:#2f5348;
+  --ink:#e6efe9; --ink2:#a9c0b6; --ink3:#7d968c;
+  --gold:#e9c77b; --leaf:#a8c98f; --cyan:#7fd4d0; --rose:#e39a86; --violet:#b7a3eb;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:"Noto Sans JP",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-size:16px; line-height:1.85; letter-spacing:.01em;
+  -webkit-font-smoothing:antialiased;
+}
+img{max-width:100%; display:block}
+a{color:var(--leaf)}
+a:hover{color:var(--gold)}
+
+/* ---- hero ---- */
+.hero{position:relative; min-height:min(78vh,620px); display:flex; align-items:flex-end; overflow:hidden; border-bottom:1px solid var(--line)}
+.hero img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:70% 50%; opacity:.42}
+.hero::after{content:""; position:absolute; inset:0; background:
+  linear-gradient(180deg,rgba(8,17,15,.5) 0%,rgba(8,17,15,.12) 38%,rgba(8,17,15,.97) 100%),
+  linear-gradient(95deg,rgba(8,17,15,.88) 0%,rgba(8,17,15,.5) 42%,rgba(8,17,15,.1) 78%)}
+.hero-inner{position:relative; z-index:2; width:100%; max-width:1040px; margin:0 auto; padding:56px 24px 44px}
+.kicker{font-family:var(--mono); font-size:12px; letter-spacing:.24em; color:var(--gold); text-transform:uppercase; margin-bottom:18px}
+.hero h1{font-family:"Noto Serif JP",serif; font-size:clamp(30px,5.4vw,54px); line-height:1.25; margin:0 0 14px; font-weight:700}
+.hero h1 small{display:block; font-size:clamp(14px,2vw,19px); color:var(--ink2); font-weight:500; margin-top:12px; font-family:"Noto Sans JP",sans-serif; line-height:1.6}
+.hero-meta{display:flex; flex-wrap:wrap; gap:8px 18px; font-size:12.5px; color:var(--ink3); font-family:var(--mono); margin-top:22px}
+.hero-meta span{display:inline-flex; align-items:center; gap:6px}
+.hero-meta b{color:var(--leaf); font-weight:500}
+
+/* ---- layout ---- */
+main{max-width:1040px; margin:0 auto; padding:0 24px 96px}
+section{padding-top:64px}
+h2{font-family:"Noto Serif JP",serif; font-size:clamp(22px,3.4vw,31px); line-height:1.4; margin:0 0 6px; font-weight:700; letter-spacing:.01em}
+h2 .num{display:block; font-family:var(--mono); font-size:12px; letter-spacing:.22em; color:var(--gold); font-weight:400; margin-bottom:10px}
+h3{font-size:clamp(17px,2.4vw,21px); margin:44px 0 10px; font-weight:700; color:var(--ink); border-left:3px solid var(--leaf); padding-left:12px; line-height:1.5}
+h4{font-size:15.5px; margin:28px 0 6px; color:var(--leaf); font-weight:700}
+p{margin:0 0 18px}
+.lead{font-size:17.5px; color:var(--ink2); line-height:1.9}
+strong{color:#fff; font-weight:700}
+em{font-style:normal; color:var(--gold); font-weight:500}
+code{font-family:var(--mono); font-size:.88em; background:#0b1a16; border:1px solid var(--line); border-radius:4px; padding:1px 6px; color:var(--cyan)}
+hr{border:0; border-top:1px solid var(--line); margin:56px 0}
+
+/* ---- toc ---- */
+.toc{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:26px 28px; margin:40px 0 0}
+.toc h2{font-size:13px; font-family:var(--mono); letter-spacing:.2em; color:var(--gold); margin:0 0 16px; border:0; padding:0}
+.toc ol{margin:0; padding-left:0; list-style:none; counter-reset:toc; columns:2; column-gap:34px}
+.toc li{counter-increment:toc; margin-bottom:9px; break-inside:avoid; font-size:14.5px}
+.toc li::before{content:counter(toc,decimal-leading-zero); font-family:var(--mono); font-size:11px; color:var(--gold); margin-right:10px}
+.toc a{color:var(--ink2); text-decoration:none}
+.toc a:hover{color:var(--gold)}
+@media(max-width:680px){.toc ol{columns:1}}
+
+/* ---- callouts ---- */
+.key{background:linear-gradient(135deg,#13291f,#112420); border:1px solid #35624a; border-left:4px solid var(--leaf); border-radius:10px; padding:22px 26px; margin:28px 0}
+.key .label{font-family:var(--mono); font-size:11px; letter-spacing:.2em; color:var(--leaf); display:block; margin-bottom:8px}
+.key p:last-child{margin-bottom:0}
+.warn{background:#2a1a16; border:1px solid #6b4030; border-left:4px solid var(--rose); border-radius:10px; padding:20px 24px; margin:26px 0}
+.warn .label{font-family:var(--mono); font-size:11px; letter-spacing:.2em; color:var(--rose); display:block; margin-bottom:8px}
+.warn p:last-child{margin-bottom:0}
+.note{font-size:13.5px; color:var(--ink3); line-height:1.75; border-left:2px solid var(--line2); padding-left:14px; margin:22px 0}
+
+/* ---- tables ---- */
+.tw{overflow-x:auto; margin:26px 0; border:1px solid var(--line); border-radius:10px; background:var(--panel)}
+table{border-collapse:collapse; width:100%; font-size:14px; min-width:520px}
+caption{caption-side:top; text-align:left; font-size:12.5px; color:var(--ink3); padding:14px 18px 0; font-family:var(--mono)}
+th,td{padding:10px 14px; text-align:left; border-bottom:1px solid var(--line); white-space:nowrap}
+thead th{background:#0e1e1a; color:var(--gold); font-family:var(--mono); font-size:11.5px; letter-spacing:.08em; font-weight:400; text-transform:uppercase; border-bottom:1px solid var(--line2)}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:#13241f}
+td.num,th.num{text-align:right; font-family:var(--mono)}
+.win{color:var(--leaf); font-weight:700}
+.lose{color:var(--rose)}
+.dim{color:var(--ink3)}
+.hl td{background:#16301f}
+.bar{display:inline-block; height:7px; border-radius:4px; background:var(--leaf); vertical-align:middle; margin-right:8px; min-width:2px}
+.bar.r{background:var(--rose)}
+
+/* ---- figures ---- */
+figure{margin:32px 0}
+figure img{border-radius:10px; border:1px solid var(--line)}
+figcaption{font-size:13px; color:var(--ink3); margin-top:10px; line-height:1.7}
+figcaption b{color:var(--leaf); font-weight:500}
+.grid2{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px}
+.grid3{display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:14px}
+.grid2 figure,.grid3 figure{margin:0}
+.grid3 figcaption{font-size:12px; margin-top:7px}
+
+/* ---- matrix ---- */
+.mx{font-size:13px}
+.mx td{text-align:center; font-family:var(--mono)}
+.mx td:first-child{text-align:left; font-family:"Noto Sans JP",sans-serif; color:var(--ink2)}
+.cw{background:rgba(168,201,143,.16); color:var(--leaf); font-weight:700}
+.cl{background:rgba(227,154,134,.12); color:var(--rose)}
+
+/* ---- build order ---- */
+.timeline{list-style:none; padding:0; margin:26px 0; position:relative}
+.timeline::before{content:""; position:absolute; left:8px; top:8px; bottom:8px; width:1px; background:var(--line2)}
+.timeline li{position:relative; padding-left:38px; margin-bottom:22px}
+.timeline li::before{content:""; position:absolute; left:3px; top:9px; width:11px; height:11px; border-radius:50%; background:var(--bg); border:2px solid var(--leaf)}
+.timeline .t{font-family:var(--mono); font-size:11.5px; color:var(--gold); letter-spacing:.08em; display:block; margin-bottom:2px}
+.timeline b{display:block; margin-bottom:2px}
+.timeline p{margin:0; font-size:14.5px; color:var(--ink2)}
+
+/* ---- species cards ---- */
+.sp{border:1px solid var(--line); border-radius:12px; background:var(--panel); overflow:hidden; margin:18px 0}
+.sp-h{display:flex; align-items:baseline; gap:12px; padding:16px 20px; border-bottom:1px solid var(--line); background:#0e1e1a; flex-wrap:wrap}
+.sp-h b{font-size:17px}
+.sp-h .lat{font-family:var(--mono); font-size:11px; letter-spacing:.16em; color:var(--ink3)}
+.sp-h .rank{margin-left:auto; font-family:var(--mono); font-size:12px; color:var(--gold)}
+.sp-b{padding:18px 20px; font-size:14.5px; line-height:1.8}
+.sp-b p{margin:0 0 12px}
+.sp-b p:last-child{margin:0}
+.sp-b .tag{display:inline-block; font-family:var(--mono); font-size:11px; padding:2px 9px; border:1px solid var(--line2); border-radius:20px; color:var(--ink2); margin:0 6px 6px 0}
+
+/* ---- checklist ---- */
+.check{list-style:none; padding:0; margin:24px 0}
+.check li{position:relative; padding-left:32px; margin-bottom:13px; font-size:15px}
+.check li::before{content:"✓"; position:absolute; left:6px; top:0; color:var(--leaf); font-weight:700}
+.check li.no::before{content:"✕"; color:var(--rose)}
+
+/* ---- footer ---- */
+footer{border-top:1px solid var(--line); background:var(--bg2); padding:44px 24px 64px; font-size:13.5px; color:var(--ink3); line-height:1.85}
+footer .inner{max-width:1040px; margin:0 auto}
+footer h3{border:0; padding:0; color:var(--ink2); font-size:14px; margin:0 0 12px}
+footer code{font-size:12px}
+footer ul{padding-left:20px; margin:0 0 18px}
+footer li{margin-bottom:6px}
+
+@media(max-width:640px){
+  body{font-size:15px}
+  .hero-inner{padding:40px 20px 32px}
+  main{padding:0 20px 72px}
+  section{padding-top:52px}
+  .key,.warn{padding:18px 20px}
+  th,td{padding:8px 11px}
+}
+</style>
+</head>
+<body>
+<header class="hero">
+  <img src="images/hero.webp" alt="種の黎明のメニュー画面。哺乳類の極相形態オーロラファングが台座の上に立つ">
+  <div class="hero-inner">
+    <div class="kicker">BIOSPHERE — 種の黎明 / STRATEGY GUIDE</div>
+    <h1>採集種7体の壁
+      <small>6系統120形態のメカ生物RTSは、序盤の1つの数字で勝率が8%から100%に変わる。エンジンを直接叩いて1,092戦ぶん測った、数字で殴る攻略。</small>
+    </h1>
+    <div class="hero-meta">
+      <span>ルール指紋 <b>12013311</b></span>
+      <span>検証 <b>1,092対戦＋40戦闘</b></span>
+      <span>更新 <b>2026-09-13</b></span>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<nav class="toc">
+  <h2>Contents</h2>
+  <ol>
+    <li><a href="#s1">勝ち方は実質ひとつしかない</a></li>
+    <li><a href="#s2">採集種7体の壁 — 最重要</a></li>
+    <li><a href="#s3">三すくみは進化5段階より強い</a></li>
+    <li><a href="#s4">源泉の経済学とDNA</a></li>
+    <li><a href="#s5">地形・収容数・移動時間</a></li>
+    <li><a href="#s6">AIの穴を5つ突く</a></li>
+    <li><a href="#s7">系統別攻略</a></li>
+    <li><a href="#s8">実戦タイムラインとチェックリスト</a></li>
+    <li><a href="#s9">図鑑と3Dモデル</a></li>
+  </ol>
+</nav>
+
+<section id="intro">
+<p class="lead" style="margin-top:44px">
+『種の黎明 — BIOSPHERE』は、魚類・両生類・鳥類・恐竜・哺乳類・節足動物から1系統を選び、六角形の生態地形を奪い合う3D RTSだ。プレイヤー1勢力 + AI5勢力、12分1本勝負。<strong>見た目は優雅な生態シミュレーションだが、中身は極めて硬質な数字のゲーム</strong>で、勝ち筋はほぼ一本道である。
+</p>
+<p>
+この攻略は、印象ではなく実測で書いた。このゲームは描画から独立した決定論エンジン（<code>src/core/engine.js</code>）を持っていて、同じseedなら同じ結果になる。そこで攻略仮説をそのままコードにして、seedを変えながら<strong>のべ1,092対戦と約40回の戦闘実験を回し</strong>、勝率の差が出たものだけをここに載せている。各章の表はすべてその出力だ。
+</p>
+<div class="note">
+検証はルール指紋 <code>12013311</code>、難易度は断りのない限り「均衡する世界（normal）」、相手は標準AI5勢力。数値はこの版のもので、DSL（<code>content/earth.habitat</code>）が変われば変わる。人間同士の対戦バランスではなく、<strong>対AI戦の攻略</strong>である。
+</div>
+</section>
+
+<hr>
+
+<section id="s1">
+<h2><span class="num">01</span>勝ち方は実質ひとつしかない</h2>
+
+<p>ルール上の勝利条件は3つある。</p>
+<ol>
+<li><strong>生命の源（源泉）を3つ以上、90秒連続で保持する</strong></li>
+<li>最後の生存勢力になる</li>
+<li>720秒（12分）到達時に繁栄度で1位</li>
+</ol>
+
+<p>ではどれが実際に起きるのか。既存の72対戦ログを集計すると、答えははっきりしている。</p>
+
+<div class="tw">
+<table>
+<caption>72対戦の決着理由（標準AI同士・12 seeds × 6配置）</caption>
+<thead><tr><th>決着の形</th><th class="num">件数</th><th class="num">割合</th><th class="num">平均決着時間</th></tr></thead>
+<tbody>
+<tr class="hl"><td>生命の源を守り抜いた</td><td class="num win">66</td><td class="num win">91.7%</td><td class="num">450.8秒</td></tr>
+<tr><td>制限時間で最も繁栄した系統</td><td class="num">6</td><td class="num">8.3%</td><td class="num">720秒</td></tr>
+<tr><td>最後まで生き残った系統</td><td class="num dim">0</td><td class="num dim">0%</td><td class="num dim">—</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="key">
+<span class="label">KEY</span>
+<p><strong>全滅勝ちは起きない。時間切れも1割以下。</strong>このゲームは事実上「源泉3つを90秒保つゲーム」であり、平均7分半で決着する。内政も戦闘も進化も、すべて<em>源泉3つを90秒</em>から逆算して決めていい。</p>
+</div>
+
+<h3>盤面と源泉の位置</h3>
+<p>
+標準マップは半径6の六角形で127区画。中心と6方向へ水辺の帯が走り、6勢力が等距離の水辺から始まる。<strong>生命の源は7つ</strong>。つまり3つ取れば勝利ラインだが、7つを6勢力で奪い合うので、<strong>1勢力が3つ持つと残りは4つ</strong>——構造的に、誰かが3つ揃えた瞬間から全員がその1勢力を止めに行く展開になる。
+</p>
+
+<figure>
+<img src="images/hud.webp" alt="ゲーム画面。左に目標パネルと源泉の競争状況、中央に六角形の生態地形、下に繁殖コマンド">
+<figcaption><b>画面の読み方。</b>左上「生命の源」が勝利カウンタ（0/90s）。その下「源泉をめぐる競争」が全6勢力の段階・源泉数・保持秒数の一覧で、<strong>攻略上もっとも重要なパネル</strong>。ここで誰が何秒保持しているかを常に見る。右上の警告（この局面では「鳥類が源泉3つを維持・敵の勝利まで85秒」）が出たら、その勢力の源泉を1つ叩きに行く。</figcaption>
+</figure>
+
+<p>
+勝利カウンタには重要な仕様がある。<strong>交戦中の源泉は保持数に数えられない</strong>。そして保持数が3を下回った瞬間、積み上げた秒数は<strong>0に戻る</strong>。部分的な減点ではなく、完全リセットだ。
+</p>
+
+<div class="tw">
+<table>
+<caption>実測：源泉3つを60秒保持した勢力へ、敵1体を送り込む</caption>
+<thead><tr><th>状態</th><th class="num">保持秒数</th></tr></thead>
+<tbody>
+<tr><td>源泉3つを保持して60秒経過</td><td class="num">60.0秒</td></tr>
+<tr class="hl"><td>敵の捕食種 <strong>1体</strong> が源泉の1つへ到着（交戦開始）</td><td class="num lose">0.0秒</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="key">
+<span class="label">最重要テクニック</span>
+<p><strong>敵の90秒カウントは、たった1体で止まる。</strong>勝てる必要はない。源泉タイルへ到着して交戦状態を作れば、その瞬間にカウントは0へ戻る。相手が「勝利まで残り10秒」でも、遊撃種1体が間に合えばご破算にできる。逆に自分が保持する側になったら、<em>源泉に隣接する敵タイルからの移動時間</em>（後述の表で2〜6秒）を数えて、常に迎撃できる兵力を置いておくこと。</p>
+</div>
+
+</section>
+
+<hr>
+
+<section id="s2">
+<h2><span class="num">02</span>採集種7体の壁 — この記事で一番大事な章</h2>
+
+<p>
+結論から書く。<strong>巣ごとに採集種を7体まで増やしてから戦闘役割を作る</strong>。これだけで勝率が変わる。
+</p>
+
+<p>
+検証方法はこうだ。標準AIの判断ロジックをそのままプレイヤー側にコピーし、<em>「巣で維持する採集種の目標数」だけ</em>を変えて、同じseed・同じ相手（標準AI5勢力）で24戦ずつ回した。他の判断（いつ攻めるか、どこを狙うか、いつ進化するか）は完全に同一である。
+</p>
+
+<div class="tw">
+<table>
+<caption>採集種の維持数と勝率（哺乳類・normal・seed 1〜24・他の判断は標準AIと同一）</caption>
+<thead><tr><th>巣ごとの採集種目標</th><th class="num">勝利/戦</th><th class="num">勝率</th><th class="num">平均繁栄度</th><th class="num">平均源泉数</th><th class="num">平均個体数</th></tr></thead>
+<tbody>
+<tr><td>2体</td><td class="num">0/24</td><td class="num lose">0%</td><td class="num">212</td><td class="num">0.5</td><td class="num">11.4</td></tr>
+<tr><td>4体 <span class="dim">（＝標準AIと同じ）</span></td><td class="num">2/24</td><td class="num lose">8.3%</td><td class="num">300</td><td class="num">0.88</td><td class="num">20.4</td></tr>
+<tr><td>6体</td><td class="num">14/24</td><td class="num">58.3%</td><td class="num">688</td><td class="num">3.33</td><td class="num">58.9</td></tr>
+<tr class="hl"><td><strong>7体</strong></td><td class="num win">24/24</td><td class="num win">100%</td><td class="num win">1009</td><td class="num win">5.08</td><td class="num">104.4</td></tr>
+<tr><td>8体</td><td class="num">22/24</td><td class="num">91.7%</td><td class="num">973</td><td class="num">5.0</td><td class="num">100.8</td></tr>
+<tr><td>10体</td><td class="num">23/24</td><td class="num">95.8%</td><td class="num">1128</td><td class="num">5.38</td><td class="num">135.4</td></tr>
+<tr><td>採集種しか作らない</td><td class="num">0/24</td><td class="num lose">0%</td><td class="num">480</td><td class="num">0.17</td><td class="num">146.2</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="key">
+<span class="label">KEY</span>
+<p>4体と7体の間に<strong>断層</strong>がある。勝率 8.3% → 100%、最終個体数 20 → 104。これは「やや有利」ではなく<strong>別のゲーム</strong>だ。そして<strong>採集種だけでは0%</strong>——戦闘役割を作らなければ源泉を1つも維持できない（平均源泉0.17）。</p>
+</div>
+
+<h3>なぜ7体なのか — 断層の正体</h3>
+
+<p>
+偶然ではない。繁殖の食料消費レートと、採集種1体の食料生産レートが、ちょうど7体で交差する。
+</p>
+
+<p>
+採集種1体の食料生産は <code>0.5 × 地形の食料係数 × 地形適性</code>。開始区画は適性が1.2に固定されるので、水辺（食料係数1.2）の巣なら <strong>1体あたり毎秒0.72</strong>。ここから個体の維持費 毎秒0.025 を引いて、純増は <strong>0.695/秒</strong>。
+</p>
+
+<p>一方、巣が途切れずに繁殖し続けるのに必要な食料は、役割ごとにこうなる。</p>
+
+<div class="tw">
+<table>
+<caption>繁殖を切らさないために必要な食料収入（基準値・繁殖倍率1.0の系統）</caption>
+<thead><tr><th>役割</th><th class="num">食料</th><th class="num">鉱物</th><th class="num">繁殖秒</th><th class="num">必要な食料/秒</th><th class="num">必要な採集種の数</th></tr></thead>
+<tbody>
+<tr><td>採集種</td><td class="num">15</td><td class="num">0</td><td class="num">4</td><td class="num">3.75</td><td class="num">5.4体</td></tr>
+<tr><td>捕食種</td><td class="num">22</td><td class="num">8</td><td class="num">5</td><td class="num">4.40</td><td class="num">6.3体</td></tr>
+<tr><td>守護種</td><td class="num">24</td><td class="num">12</td><td class="num">6</td><td class="num">4.00</td><td class="num">5.8体</td></tr>
+<tr class="hl"><td>遊撃種</td><td class="num">18</td><td class="num">6</td><td class="num">4</td><td class="num win">4.50</td><td class="num win">6.5体</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>
+一番食う遊撃種を連続生産するには毎秒4.5の食料が要り、採集種は1体0.695しか生まない。<strong>4.5 ÷ 0.695 = 6.5体</strong>。切り上げて<strong>7体</strong>——ここが、巣が「止まらない」ラインである。
+</p>
+<p>
+6体では毎秒4.17で、わずかに足りない。繁殖が数秒ずつ詰まり、その遅れが拡張の遅れになり、領土が増えないので収容数も収入も増えず、じわじわ差が開く。実測で6体が58.3%と中途半端なのは、seedによってこの詰まりを取り返せたり取り返せなかったりするからだ。
+</p>
+
+<div class="warn">
+<span class="label">注意</span>
+<p><strong>「採集種をいっぱい作る」だけでは勝てない。</strong>実測の最下段、採集種しか作らない方針は個体数146と最多なのに勝率0%だ。採集種は攻撃3・体力24で、しかも<em>三すくみの補正を一切持たない</em>（後述）。7体という数字は「内政の上限」ではなく「戦闘役割を作り続けるための土台」であり、7体を超えたぶんの資源は戦力に回すのが正しい。</p>
+</div>
+
+<figure>
+<img src="images/expansion.webp" alt="中盤の盤面。プレイヤーの群れが盤面の大半を占拠している">
+<figcaption><b>採集種7体を守ったまま5分14秒。</b>個体数72、食料1,294（毎秒+5.9）、領土は盤面の大半。左の一覧を見ると、自分（哺乳類）だけが<strong>まだ第I段階＝原始</strong>で、他の5勢力はIII〜Vまで進化している。それでも盤面はこちらが握っている——この試合では鉱物を巣の新設に使いすぎて進化が止まっていたのだが、<em>内政の物量は進化の遅れを覆う</em>ことがそのまま出た局面。もちろん進化も止めないのが最善（第4章）。</figcaption>
+</figure>
+
+<h3>全系統で効く</h3>
+<p>これは哺乳類だけの話ではない。全6系統で、標準AIと同じ方針（採集4体）と、採集種を1.5倍にした方針（採集6体）を12戦ずつ比べた。<strong>6体でこれだけ変わる</strong>——7体にすると全系統が勝率100%に達する（第7章）。</p>
+
+<div class="tw">
+<table>
+<caption>系統別：採集4体 → 採集6体の勝率変化（seed 1〜12・normal）</caption>
+<thead><tr><th>系統</th><th class="num">採集4体</th><th class="num">採集6体</th><th class="num">差</th><th class="num">平均源泉数</th><th class="num">平均最終段階</th></tr></thead>
+<tbody>
+<tr><td>魚類</td><td class="num">16.7%</td><td class="num">50.0%</td><td class="num win">+33.3</td><td class="num">3.25</td><td class="num">4.92</td></tr>
+<tr><td>両生類</td><td class="num">41.7%</td><td class="num win">91.7%</td><td class="num win">+50.0</td><td class="num">5.00</td><td class="num">5.00</td></tr>
+<tr><td>鳥類</td><td class="num">16.7%</td><td class="num">66.7%</td><td class="num win">+50.0</td><td class="num">3.75</td><td class="num">5.00</td></tr>
+<tr class="hl"><td>恐竜</td><td class="num lose">0%</td><td class="num win">100%</td><td class="num win">+100.0</td><td class="num">5.50</td><td class="num">5.00</td></tr>
+<tr><td>哺乳類</td><td class="num">8.3%</td><td class="num">66.7%</td><td class="num win">+58.4</td><td class="num">3.92</td><td class="num">4.83</td></tr>
+<tr><td>節足動物</td><td class="num">8.3%</td><td class="num">50.0%</td><td class="num win">+41.7</td><td class="num">3.17</td><td class="num">4.92</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>
+特に<strong>恐竜が 0% → 100%</strong> という極端な変化を見せる。恐竜は繁殖倍率0.82（繁殖時間が1.22倍かかる）で、標準AI方針では内政が回らず何もできないまま轢かれる。しかし採集種を厚くすると、遅い繁殖を食料の余剰で押し切れるようになり、攻撃倍率1.22の暴力が刺さり始める。<strong>「弱い系統」ではなく「内政が要る系統」だった</strong>ということだ。
+</p>
+
+<h3>難易度は関係ない</h3>
+<div class="tw">
+<table>
+<caption>採集7体方針の難易度別勝率（哺乳類・seed 1〜24）</caption>
+<thead><tr><th>難易度</th><th class="num">勝利/戦</th><th class="num">勝率</th><th class="num">平均繁栄度</th></tr></thead>
+<tbody>
+<tr><td>やさしい（easy）</td><td class="num">24/24</td><td class="num win">100%</td><td class="num">883</td></tr>
+<tr><td>均衡する世界（normal）</td><td class="num">24/24</td><td class="num win">100%</td><td class="num">1009</td></tr>
+<tr><td>厳しい世界（hard）</td><td class="num">24/24</td><td class="num win">100%</td><td class="num">934</td></tr>
+</tbody>
+</table>
+</div>
+<p class="note">
+難易度が変えるのはAIの思考間隔（normalの1.8倍〜0.7倍）と、AIが敵地へ攻め込み始める時刻（easy 70秒 / normal・hard 35秒）だけで、AIの内政方針は変わらない。つまり<strong>難易度を上げてもAIは採集種4体のままで、この穴は塞がらない</strong>。hardで負けるとしたら、それは難易度ではなく序盤の事故（開始位置が強い勢力に挟まれた等）である。
+</p>
+
+</section>
+<hr>
+
+<section id="s3">
+<h2><span class="num">03</span>三すくみは進化5段階より強い</h2>
+
+<p>
+戦闘役割は4つ。<strong>捕食種は遊撃種に強く、遊撃種は守護種に強く、守護種は捕食種に強い</strong>。採集種はこの輪に入らない。有利な相手への攻撃倍率は <code>counterBonus = 2.4</code>、つまり<strong>2.4倍</strong>である。この数字がこのゲームの戦闘のすべてを決めている。
+</p>
+
+<figure style="background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:28px 20px 20px; margin:30px 0">
+<svg viewBox="0 0 640 380" role="img" aria-label="三すくみの図。捕食種は遊撃種に2.4倍、遊撃種は守護種に2.4倍、守護種は捕食種に2.4倍のダメージを与える" style="width:100%;height:auto;max-width:640px;margin:0 auto;display:block">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#a8c98f"/>
+    </marker>
+    <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e9c77b"/>
+    </marker>
+  </defs>
+  <!-- arrows -->
+  <path d="M368,96 Q500,150 486,232" fill="none" stroke="#e9c77b" stroke-width="2.6" marker-end="url(#ar2)"/>
+  <path d="M404,300 Q320,338 236,300" fill="none" stroke="#a8c98f" stroke-width="2.2" marker-end="url(#ar)"/>
+  <path d="M154,232 Q140,150 272,96" fill="none" stroke="#a8c98f" stroke-width="2.2" marker-end="url(#ar)"/>
+  <!-- labels on arrows -->
+  <text x="497" y="160" fill="#e9c77b" font-size="15" font-family="ui-monospace,monospace" font-weight="700">×2.4</text>
+  <text x="497" y="180" fill="#e9c77b" font-size="12" font-family="ui-monospace,monospace">効率 1.25</text>
+  <text x="320" y="360" fill="#a8c98f" font-size="15" font-family="ui-monospace,monospace" text-anchor="middle" font-weight="700">×2.4</text>
+  <text x="320" y="376" fill="#7d968c" font-size="12" font-family="ui-monospace,monospace" text-anchor="middle">効率 0.43</text>
+  <text x="88" y="160" fill="#a8c98f" font-size="15" font-family="ui-monospace,monospace" font-weight="700">×2.4</text>
+  <text x="58" y="180" fill="#7d968c" font-size="12" font-family="ui-monospace,monospace">効率 0.64</text>
+  <!-- nodes -->
+  <g>
+    <circle cx="320" cy="74" r="52" fill="#16302a" stroke="#e39a86" stroke-width="2"/>
+    <text x="320" y="70" fill="#e6efe9" font-size="17" text-anchor="middle" font-family="'Noto Sans JP',sans-serif" font-weight="700">捕食種</text>
+    <text x="320" y="92" fill="#a9c0b6" font-size="12" text-anchor="middle" font-family="ui-monospace,monospace">攻12 / 体30</text>
+  </g>
+  <g>
+    <circle cx="510" cy="282" r="52" fill="#16302a" stroke="#7fd4d0" stroke-width="2"/>
+    <text x="510" y="278" fill="#e6efe9" font-size="17" text-anchor="middle" font-family="'Noto Sans JP',sans-serif" font-weight="700">遊撃種</text>
+    <text x="510" y="300" fill="#a9c0b6" font-size="12" text-anchor="middle" font-family="ui-monospace,monospace">攻8 / 体23</text>
+  </g>
+  <g>
+    <circle cx="130" cy="282" r="52" fill="#16302a" stroke="#b7a3eb" stroke-width="2"/>
+    <text x="130" y="278" fill="#e6efe9" font-size="17" text-anchor="middle" font-family="'Noto Sans JP',sans-serif" font-weight="700">守護種</text>
+    <text x="130" y="300" fill="#a9c0b6" font-size="12" text-anchor="middle" font-family="ui-monospace,monospace">攻8 / 体45</text>
+  </g>
+</svg>
+<figcaption style="text-align:center"><b>三すくみと、その非対称性。</b>補正はどれも2.4倍だが、「実効攻撃 ÷ 相手の体力」は捕食種→遊撃種が突出して高い（1.25）。同じ有利でも、<strong>捕食種で遊撃種を狩るのが最も一方的</strong>で、遊撃種で守護種を崩すのは時間も被害もかかる。採集種はこの輪に入らない（相性補正を持たない）。</figcaption>
+</figure>
+
+<figure class="grid3">
+  <figure><img src="images/role-hunter.webp" alt="哺乳類・極相の捕食種"><figcaption><b>捕食種</b> 攻12 / 体30 / 速1.1<br>遊撃種に2.4倍</figcaption></figure>
+  <figure><img src="images/role-guardian.webp" alt="哺乳類・極相の守護種"><figcaption><b>守護種</b> 攻8 / 体45 / 速0.7<br>捕食種に2.4倍</figcaption></figure>
+  <figure><img src="images/role-scout.webp" alt="哺乳類・極相の遊撃種"><figcaption><b>遊撃種</b> 攻8 / 体23 / 速1.6<br>守護種に2.4倍</figcaption></figure>
+</figure>
+
+<h3>10対10の総当たり</h3>
+<p>同じ系統・同じ段階・巣なしの区画で、攻撃側10体が守備側10体を攻めたときの決着。セルは<strong>勝った側の残存数</strong>。</p>
+
+<div class="tw">
+<table class="mx">
+<caption>攻撃側10体（縦） × 守備側10体（横）／哺乳類・原始・巣0</caption>
+<thead><tr><th>攻撃側 ＼ 守備側</th><th>採集種</th><th>捕食種</th><th>守護種</th><th>遊撃種</th></tr></thead>
+<tbody>
+<tr><td>採集種</td><td class="cl">負 −3</td><td class="cl">負 −9</td><td class="cl">負 −9</td><td class="cl">負 −8</td></tr>
+<tr><td>捕食種</td><td class="cw">勝 +9</td><td class="cl">負 −3</td><td class="cl">負 −8</td><td class="cw">勝 +9 <small>1.6s</small></td></tr>
+<tr><td>守護種</td><td class="cw">勝 +9</td><td class="cw">勝 +8 <small>3.2s</small></td><td class="cl">負 −3</td><td class="cl">負 −5</td></tr>
+<tr><td>遊撃種</td><td class="cw">勝 +8</td><td class="cl">負 −9 <small>1.4s</small></td><td class="cw">勝 +3 <small>7.0s</small></td><td class="cl">負 −3</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>この表からは、攻略上きわめて重要な3つの事実が読める。</p>
+
+<h4>① 同じ役割・同じ数なら、守る側が勝つ</h4>
+<p>
+対角線がすべて「攻撃側の負け」になっている。守備側には <code>1.08 + 巣段階 × 0.08</code> の被ダメージ軽減があるからだ。<strong>互角の戦力で殴りに行くのは、それだけで負け手</strong>である。攻めるなら相性か数か段階で上回ること。
+</p>
+
+<h4>② 三すくみは対称ではない — 捕食種の狩りが突出して強い</h4>
+<p>
+同じ2.4倍でも、結果はまるで違う。捕食種が遊撃種を狩ると<strong>1.6秒で9体残しの圧勝</strong>。一方、遊撃種が守護種を倒すのは7.0秒かかって3体しか残らない辛勝だ。攻撃力と体力の組み合わせが違うためで、「有利を取ったときの効率」を計算するとこうなる。
+</p>
+
+<div class="tw">
+<table>
+<caption>相性を取ったときの実効効率（攻撃力 × 2.4 ÷ 相手の体力）</caption>
+<thead><tr><th>組み合わせ</th><th class="num">実効攻撃</th><th class="num">相手の体力</th><th class="num">効率</th><th>体感</th></tr></thead>
+<tbody>
+<tr class="hl"><td>捕食種 → 遊撃種</td><td class="num">28.8</td><td class="num">23</td><td class="num win">1.25</td><td>一方的な虐殺</td></tr>
+<tr><td>守護種 → 捕食種</td><td class="num">19.2</td><td class="num">30</td><td class="num">0.64</td><td>確実に勝てる</td></tr>
+<tr><td>遊撃種 → 守護種</td><td class="num">19.2</td><td class="num">45</td><td class="num lose">0.43</td><td>辛勝、被害は大きい</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="key">
+<span class="label">実戦での意味</span>
+<p><strong>遊撃種を単体で前線に置かない。</strong>捕食種に見つかった瞬間に消える（10体が1.4秒で全滅する）。遊撃種は「守護種が守る区画をこじ開ける鍵」か「空き地と源泉を素早く押さえる足」であって、殴り合いの主力ではない。逆に、<strong>敵が遊撃種を並べてきたら捕食種を送るだけで勝てる</strong>。</p>
+</div>
+
+<h4>③ 相性を数で覆すには1.8倍が要る</h4>
+<div class="tw">
+<table>
+<caption>守護種10体が守る区画へ、捕食種（不利側）を増やして攻める</caption>
+<thead><tr><th>攻撃側</th><th>結果</th><th class="num">残存</th></tr></thead>
+<tbody>
+<tr><td>捕食種 10体</td><td class="lose">防衛される</td><td class="num">守備側 8体</td></tr>
+<tr><td>捕食種 14体</td><td class="lose">防衛される</td><td class="num">守備側 5体</td></tr>
+<tr><td>捕食種 16体</td><td class="lose">防衛される</td><td class="num">守備側 2体</td></tr>
+<tr class="hl"><td>捕食種 <strong>18体</strong></td><td class="win">奪取成功</td><td class="num win">攻撃側 8体</td></tr>
+<tr><td>捕食種 24体</td><td class="win">奪取成功</td><td class="num">攻撃側 17体</td></tr>
+</tbody>
+</table>
+</div>
+<p>
+不利な相性で攻めるには<strong>1.8倍</strong>の頭数が要る。逆に有利な相性なら、同数10体でも守備補正を突き破って奪取できる（遊撃種10 → 守護種10で攻撃側3体残り）。<em>役割を1つ変えるだけで、必要な兵力が半分になる</em>と覚えておけばいい。
+</p>
+
+<h3>相性 vs 進化 — どちらが強いか</h3>
+<p>進化は5段階あり、最終段階の攻撃倍率は1.72倍、体力は√1.72＝1.31倍になる。実効的な戦闘力は約2.25倍。では相性2.4倍と正面衝突させるとどうなるか。</p>
+
+<div class="tw">
+<table>
+<caption>進化差だけの勝負（捕食種10 vs 捕食種10・攻撃側の段階のみ変更）</caption>
+<thead><tr><th>攻撃側の段階</th><th>結果</th><th class="num">残存</th></tr></thead>
+<tbody>
+<tr><td>① 原始</td><td class="lose">負け</td><td class="num">守備側 3体</td></tr>
+<tr class="hl"><td>② 分化 <span class="dim">（1段階の差）</span></td><td class="win">勝ち</td><td class="num win">攻撃側 4体</td></tr>
+<tr><td>③ 適応</td><td class="win">勝ち</td><td class="num">攻撃側 6体</td></tr>
+<tr><td>⑤ 極相</td><td class="win">勝ち</td><td class="num">攻撃側 7体</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="tw">
+<table>
+<caption>相性 vs 進化の直接対決（原始の守護種10体が守る区画を攻める）</caption>
+<thead><tr><th>攻撃側</th><th>結果</th><th class="num">残存</th></tr></thead>
+<tbody>
+<tr><td>③ 適応の捕食種 10体</td><td class="lose">防衛される</td><td class="num">守備側 6体</td></tr>
+<tr class="hl"><td>⑤ <strong>極相</strong>の捕食種 10体</td><td class="lose">防衛される</td><td class="num lose">守備側 4体</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="key">
+<span class="label">KEY</span>
+<p><strong>4段階ぶんの進化差でも、不利な相性は覆せない。</strong>最強の極相・捕食種10体が、最弱の原始・守護種10体に負ける。逆に言えば、<em>まだ原始段階でも、相性さえ合っていれば格上の群れを止められる</em>。「進化で負けているから勝てない」は誤りで、正しくは「役割を間違えているから勝てない」。</p>
+</div>
+
+<h3>混成された陣地は、正面からはまず抜けない</h3>
+<p>捕食種10＋守護種10（巣1段階）が守る区画へ、20体の攻撃側をぶつけた結果。</p>
+
+<div class="tw">
+<table>
+<caption>20体で「捕食10＋守護10・巣1」を攻める（すべて防衛成功）</caption>
+<thead><tr><th>攻撃側の編成</th><th class="num">守備側の残存</th><th class="num">戦闘時間</th><th>評価</th></tr></thead>
+<tbody>
+<tr><td>遊撃種 20</td><td class="num lose">17体</td><td class="num">2.2秒</td><td class="lose">溶けるだけ</td></tr>
+<tr><td>捕食種 20</td><td class="num lose">15体</td><td class="num">3.8秒</td><td class="lose">守護種に阻まれる</td></tr>
+<tr><td>捕食10＋遊撃10</td><td class="num">16体</td><td class="num">3.0秒</td><td class="lose">中途半端</td></tr>
+<tr><td>捕食7＋守護6＋遊撃7</td><td class="num">12体</td><td class="num">5.8秒</td><td>まだ足りない</td></tr>
+<tr class="hl"><td><strong>守護10＋遊撃10</strong></td><td class="num win">9体</td><td class="num">7.6秒</td><td class="win">最善だが、それでも失敗</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>
+混成陣地が堅いのは、<strong>ダメージが相手の役割構成比に応じて分配される</strong>ためだ。守護種だけの陣地なら遊撃種の2.4倍が全弾命中するが、半分が捕食種なら遊撃種の攻撃は半分しか有利を取れず、残り半分は捕食種に返り討ちにされる。
+</p>
+
+<div class="key">
+<span class="label">結論</span>
+<p>敵の主拠点を<strong>正面から抜こうとしてはいけない</strong>。同数では2倍あっても足りない。取るべき手は3つ——(1) 敵が出撃して手薄になった隙を突く、(2) 拠点ではなく<em>源泉</em>だけを狙う、(3) 相手が単一役割に偏った群れを送り出してきたところを、カウンター役割で野戦で潰す。</p>
+</div>
+
+<h3>採集種は「壁」として機能する</h3>
+<p>捕食種5体だけで遊撃種10体を攻めた場合と、採集種5体を足して10体で攻めた場合の比較。</p>
+<div class="tw">
+<table>
+<thead><tr><th>攻撃側の編成</th><th class="num">戦闘後の捕食種</th><th class="num">戦闘時間</th></tr></thead>
+<tbody>
+<tr><td>捕食種5のみ</td><td class="num">2体</td><td class="num">4.4秒</td></tr>
+<tr class="hl"><td>捕食種5 ＋ <strong>採集種5</strong></td><td class="num win">4体 <span class="dim">（＋採集種4体も生存）</span></td><td class="num">2.8秒</td></tr>
+</tbody>
+</table>
+</div>
+<p>
+採集種は相性補正を持たないが攻撃3・体力24はあり、<strong>ダメージの分散先になる</strong>。結果、主力の捕食種の生存数が2体→4体に増えた。緊急防衛では採集種を戦列から外さないほうが、むしろ戦闘役割が生き残る。
+</p>
+<p class="note">
+ただし平時は逆。移動命令の「採集種を残す」チェックは<strong>常にON</strong>が基本だ。採集種を前線に送るとその区画の食料収入が丸ごと消え、第2章の7体ラインが崩れる。壁として使うのは「自分の巣が攻められている」ときだけ。
+</p>
+
+<h3>系統ごとの素の戦闘力</h3>
+<div class="tw">
+<table>
+<caption>捕食種10体同士・同段階・巣0で、攻撃側の系統だけを変える（守備側は哺乳類）</caption>
+<thead><tr><th>系統</th><th class="num">攻撃倍率</th><th>結果</th><th class="num">残存</th></tr></thead>
+<tbody>
+<tr class="hl"><td>恐竜</td><td class="num">1.22</td><td class="win">守備補正を押し切って勝利</td><td class="num win">攻撃側 3体</td></tr>
+<tr><td>鳥類</td><td class="num">1.08</td><td class="lose">惜敗</td><td class="num">守備側 1体</td></tr>
+<tr><td>哺乳類</td><td class="num">1.04</td><td class="lose">敗北</td><td class="num">守備側 3体</td></tr>
+<tr><td>魚類・両生類・節足動物</td><td class="num">0.96</td><td class="lose">敗北</td><td class="num">守備側 2〜4体</td></tr>
+</tbody>
+</table>
+</div>
+<p>
+<strong>恐竜だけが「同数・互角の条件で殴り勝てる」系統</strong>である。他の系統は、地形・相性・段階・数のどれかで上回らないと攻め手にならない。なお地形適性も戦闘に効く（戦闘係数 = <code>0.75 + min(1.5, 適性) × 0.25</code>）が、最良1.09〜最悪0.75で<strong>最大1.45倍</strong>。相性2.4倍には遠く及ばない。それでも、<em>得意な地形で迎え撃つ</em>だけで1割前後の差が付く。
+</p>
+
+</section>
+<hr>
+
+<section id="s4">
+<h2><span class="num">04</span>源泉の経済学 — 進化は源泉なしには完走できない</h2>
+
+<p>
+生命の源（源泉）は勝利条件であると同時に、<strong>このゲームで最大のDNA供給源</strong>である。DNAの収入源は3つしかない。
+</p>
+
+<div class="tw">
+<table>
+<caption>DNA（遺伝子）の収入内訳</caption>
+<thead><tr><th>収入源</th><th class="num">DNA/秒</th><th>条件</th></tr></thead>
+<tbody>
+<tr><td>個体のいる生息地</td><td class="num">0.06</td><td>1体でもいれば。<strong>無人の領土は0</strong></td></tr>
+<tr><td>巣（1段階につき）</td><td class="num">0.08</td><td>無人でも入る</td></tr>
+<tr class="hl"><td><strong>源泉（個体がいる場合）</strong></td><td class="num win">+0.30</td><td>通常の生息地の<strong>5倍</strong></td></tr>
+</tbody>
+</table>
+</div>
+
+<p>そして極相（第5段階）までに必要なDNAは190。これを12分で割ると——</p>
+
+<div class="tw">
+<table>
+<caption>進化コスト（食料65・鉱物30・DNA28に段階係数を掛ける）</caption>
+<thead><tr><th>進化</th><th class="num">食料</th><th class="num">鉱物</th><th class="num">DNA</th><th class="num">所要秒</th><th class="num">累計DNA</th></tr></thead>
+<tbody>
+<tr><td>① 原始 → ② 分化</td><td class="num">65</td><td class="num">30</td><td class="num">28</td><td class="num">12</td><td class="num">28</td></tr>
+<tr><td>② 分化 → ③ 適応</td><td class="num">91</td><td class="num">42</td><td class="num">39</td><td class="num">16</td><td class="num">67</td></tr>
+<tr><td>③ 適応 → ④ 繁栄</td><td class="num">124</td><td class="num">57</td><td class="num">53</td><td class="num">20</td><td class="num">120</td></tr>
+<tr><td>④ 繁栄 → ⑤ 極相</td><td class="num">163</td><td class="num">75</td><td class="num">70</td><td class="num">24</td><td class="num">190</td></tr>
+<tr class="hl"><td><strong>合計</strong></td><td class="num">443</td><td class="num">204</td><td class="num win">190</td><td class="num">72</td><td class="num">—</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="key">
+<span class="label">計算</span>
+<p>720秒でDNA190を稼ぐには、平均 <strong>0.264 DNA/秒</strong> が必要。開始時の手持ちは巣1つ＋生息地1つで <strong>0.14/秒</strong> しかない。このままでは絶対に届かない。<br>
+<strong>源泉を1つ持てば +0.30</strong>。それだけで必要ラインを超える。つまり<em>源泉は勝利条件であると同時に、進化の燃料タンクでもある</em>。逆に源泉を1つも取れない試合は、進化レースでも自動的に負ける。</p>
+</div>
+
+<h3>無人の領土はDNAを生まない</h3>
+<div class="warn">
+<span class="label">よくある事故</span>
+<p>領土を広げたつもりで、全部の群れを次の区画へ動かしてしまい、<strong>通ってきた区画が無人になっている</strong>——このとき、その区画のDNA（0.06/秒）も食料も鉱物も入っていない。食料と鉱物は<em>採集種の数</em>で決まり、DNAは<em>1体でもいるか</em>で決まる。<br>
+対策はシンプルで、<strong>移動は常に「半数」を基本にする</strong>こと。全数移動は、敵拠点へ決戦を挑むときか、明らかに安全な後方を畳むときだけに限る。</p>
+</div>
+
+<h3>源泉の守り方</h3>
+<p>
+源泉は狙われる。そして第1章で見たとおり、<strong>敵が1体到着するだけで自分の90秒カウントは0に戻る</strong>。したがって源泉の防衛は「落とされないこと」ではなく「<em>交戦させないこと</em>」が目標になる。
+</p>
+<ul>
+<li><strong>源泉そのものに戦力を置く。</strong>隣に置いて「来たら反撃」では遅い。到着＝交戦＝カウントリセットなので、到着前に潰すか、到着した瞬間に瞬殺できる戦力が源泉の上に必要。</li>
+<li><strong>混成で置く。</strong>第3章のとおり、守護種＋捕食種の組み合わせは正面から抜きにくい。単一役割だとカウンターを1種類ぶつけられて崩れる。</li>
+<li><strong>巣を建てる。</strong>被ダメージ軽減が1.08→1.24になるうえ、収容数+8と、無人でもDNA +0.08/秒が付く。源泉に巣は強い。</li>
+<li><strong>3つではなく4つ目を取る。</strong>3つちょうどでは、1つ削られた瞬間にカウントが0になる。4つ目は保険であり、同時に相手の勝利条件を潰す妨害でもある（源泉は全部で7つしかない）。</li>
+</ul>
+
+<figure>
+<img src="images/battle.webp" alt="源泉をめぐる戦闘中の盤面">
+<figcaption><b>源泉の争奪。</b>交戦中の区画は収入も繁殖も止まる。源泉で長期戦になっている間は、その源泉から一切DNAが出ていないことを忘れない。長引かせるより、勝てないと見たら引いて別の源泉へ回るほうが得なことが多い。</figcaption>
+</figure>
+
+<h3>勝ち筋のパターン</h3>
+<p>実測で勝率100%を出した方針の内訳を見ると、平均で<strong>源泉5.08個・領土は盤面の大半・最終段階4.96</strong>に達していた。これは「3つ確保して守り切る」ではなく、<strong>「圧倒的に広げた結果、源泉が勝手に5つ集まる」</strong>形である。</p>
+<div class="key">
+<span class="label">戦略の型</span>
+<p>源泉に直行するより、<strong>内政で膨らんでから面で押す</strong>ほうが強い。実測でも「源泉を最優先」に振った方針（87.5%）は、素直に採集7体だけを守った方針（100%）に負けている。源泉は<em>目的地</em>ではなく、<em>拡張の結果として通過する場所</em>と考えるのが正しい。</p>
+</div>
+
+</section>
+
+<hr>
+
+<section id="s5">
+<h2><span class="num">05</span>地形・収容数・移動時間</h2>
+
+<h3>どの地形を取るか</h3>
+<div class="tw">
+<table>
+<caption>地形の性能（採集種1体あたりの収入は適性1.2で計算）</caption>
+<thead><tr><th>地形</th><th class="num">食料係数</th><th class="num">鉱物係数</th><th class="num">収容</th><th class="num">食料/秒・体</th><th class="num">鉱物/秒・体</th><th class="num">採集種15の回収</th></tr></thead>
+<tbody>
+<tr class="hl"><td>森林</td><td class="num">1.3</td><td class="num">0.35</td><td class="num">15 (+7)</td><td class="num win">0.780</td><td class="num lose">0.076</td><td class="num">19.9秒</td></tr>
+<tr class="hl"><td>海洋</td><td class="num">1.3</td><td class="num">0.45</td><td class="num">16 (+7)</td><td class="num win">0.780</td><td class="num">0.097</td><td class="num">19.9秒</td></tr>
+<tr><td>水辺</td><td class="num">1.2</td><td class="num">0.55</td><td class="num">16 (+7)</td><td class="num">0.720</td><td class="num">0.119</td><td class="num">21.6秒</td></tr>
+<tr><td>草原</td><td class="num">1.1</td><td class="num">0.50</td><td class="num">16 (+7)</td><td class="num">0.660</td><td class="num">0.108</td><td class="num">23.6秒</td></tr>
+<tr><td>高地</td><td class="num lose">0.6</td><td class="num win">1.10</td><td class="num lose">12 (+5)</td><td class="num lose">0.360</td><td class="num win">0.238</td><td class="num lose">44.8秒</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="warn">
+<span class="label">高地の罠</span>
+<p>高地は鉱物が2〜3倍出るが、<strong>食料が半分・収容数も最小</strong>。第2章の「採集種7体」ラインを高地で満たすには、水辺の倍の採集種が要る計算になる（高地の純収入は0.335/秒なので、遊撃種の連続生産には13.4体必要＝収容数を超えている）。<br>
+<strong>高地は内政の主軸にしてはいけない。</strong>鉱物が足りなくて巣が建てられないときに1〜2枚持つ「鉱山」であり、拠点ではない。鳥類だけは適性1.4で高地の食料が0.84/秒まで上がるので例外的に運用できる。</p>
+</div>
+
+<h3>人口上限の増やし方</h3>
+<p>収容数は <code>Σ(地形の収容 × 0.45 を四捨五入) + 巣段階 × 8</code>。開始時は水辺1枚（+7）と巣1（+8）で<strong>15</strong>。初期個体が9なので、残り枠は6しかない。</p>
+<div class="tw">
+<table>
+<thead><tr><th>枠を増やす手段</th><th class="num">コスト</th><th class="num">増える収容数</th><th class="num">1枠あたり</th><th>備考</th></tr></thead>
+<tbody>
+<tr class="hl"><td>中立地へ進出（水辺・草原・海洋）</td><td class="num win">食料10</td><td class="num">+7</td><td class="num win">食料1.43</td><td>収入源も増える</td></tr>
+<tr><td>新しい巣を建てる</td><td class="num">食料20＋鉱物35</td><td class="num">+8</td><td class="num">食料2.5＋鉱物4.4</td><td>繁殖口も増える</td></tr>
+<tr><td>巣を増強（2段階目）</td><td class="num lose">食料20＋鉱物70</td><td class="num">+8</td><td class="num lose">食料2.5＋鉱物8.8</td><td>防御は上がる</td></tr>
+</tbody>
+</table>
+</div>
+<p>
+<strong>土地を取るのが圧倒的に安い。</strong>食料10で収容+7、しかも収入と防衛線が増える。巣の増強（鉱物70）は、<em>源泉を守る区画</em>以外ではほとんど割に合わない。序盤の鉱物は、まず2つ目・3つ目の<strong>新しい巣</strong>に使うこと。巣が増えれば繁殖の並列数が増え、第2章の「7体」を複数箇所で同時に回せる。
+</p>
+
+<h3>移動時間表</h3>
+<p>移動時間は <code>距離 × 3.6 ÷ (群れの平均速度 × 系統速度)</code>。<strong>混成すると平均速度で動く</strong>ので、守護種を混ぜた群れは鈍足になる。</p>
+
+<div class="tw">
+<table>
+<caption>1区画あたりの移動秒数（単一役割で編成した場合）</caption>
+<thead><tr><th>系統</th><th class="num">採集種</th><th class="num">捕食種</th><th class="num">守護種</th><th class="num">遊撃種</th><th>移動距離</th></tr></thead>
+<tbody>
+<tr class="hl"><td>鳥類</td><td class="num">2.67</td><td class="num">2.42</td><td class="num">3.81</td><td class="num win">1.67</td><td class="win">2区画（第2段階〜）</td></tr>
+<tr><td>魚類</td><td class="num">3.00</td><td class="num">2.73</td><td class="num">4.29</td><td class="num">1.88</td><td>1区画</td></tr>
+<tr><td>哺乳類</td><td class="num">3.33</td><td class="num">3.03</td><td class="num">4.76</td><td class="num">2.08</td><td>1区画</td></tr>
+<tr><td>節足動物</td><td class="num">3.43</td><td class="num">3.12</td><td class="num">4.90</td><td class="num">2.14</td><td>1区画</td></tr>
+<tr><td>両生類</td><td class="num">3.60</td><td class="num">3.27</td><td class="num">5.14</td><td class="num">2.25</td><td>1区画</td></tr>
+<tr><td>恐竜</td><td class="num lose">4.09</td><td class="num">3.72</td><td class="num lose">5.84</td><td class="num">2.56</td><td>1区画</td></tr>
+</tbody>
+</table>
+</div>
+<p class="note">
+鳥類は第2段階から2区画を1回の移動でまたげる。遊撃種なら2区画を3.33秒＝<strong>1区画あたり1.67秒</strong>で、全系統中もっとも速い。敵の源泉カウントを妨害する遊撃部隊としては最良で、鳥類の主用途はここにある。
+</p>
+
+<h3>季節</h3>
+<p>60秒ごとに3つの気候が巡る。<strong>雨期は水辺の食料1.15倍、乾期は水辺0.75倍・草原0.85倍</strong>。水辺を主力にしている場合、乾期（試合開始から120〜180秒、300〜360秒…）は収入が4分の3になる。第2章の7体ラインは乾期には満たせないので、<strong>乾期の直前に繁殖予約を埋めておく</strong>と詰まりを減らせる。森林と海洋は季節の影響を受けない——これが森林・海洋の隠れた強みである。</p>
+
+</section>
+
+<hr>
+
+<section id="s6">
+<h2><span class="num">06</span>AIの穴を5つ突く</h2>
+
+<p>対AI戦である以上、AIの判断規則を知っていることが最大の武器になる。実装を読むと、AIには利用できる規則性が5つある。</p>
+
+<h3>穴① 採集種を4体でやめる</h3>
+<p>
+AIは巣の採集種が4体に達すると、以降は戦闘役割しか作らない。第2章のとおり、これは繁殖を切らさない下限（6.5体）を下回っている。<strong>つまり全AIは、恒常的に内政が詰まった状態で戦っている。</strong>プレイヤーが7体にするだけで、中盤以降の物量が5倍（個体数20 → 104）になる。これがこのゲーム最大の穴だ。
+</p>
+
+<h3>穴② 相性を計算せずに攻めてくる</h3>
+<p>
+AIが「攻めるかどうか」を決める式は <code>自軍の攻撃力合計 ≧ 敵の攻撃力合計 × 1.15</code>。この攻撃力合計は<strong>役割ごとの素の攻撃値を足しただけ</strong>で、三すくみの2.4倍を一切考慮していない。
+</p>
+<div class="key">
+<span class="label">使い方</span>
+<p><strong>守護種（攻撃8）を並べた区画は、AIの目には「弱く」映る。</strong>捕食種（攻撃12）より数字が小さいからだ。そこへAIは捕食種主体の群れを送り込んでくる——守護種の2.4倍カウンターが待っている区画に。<br>
+前線の防衛は<strong>守護種を厚めに</strong>。AIを誘い込んで、有利な相性で削り取るのが最も効率のいい戦力交換になる。</p>
+</div>
+
+<h3>穴③ 開始35秒間は絶対に攻めてこない</h3>
+<p>AIには「敵地へは <code>時間 &lt; 35秒</code>（easyは70秒）の間は向かわない」という制約がある。実測した最初の戦闘発生時刻はこうだ。</p>
+<div class="tw">
+<table>
+<caption>最初の戦闘が起きる時刻（10 seed・哺乳類）</caption>
+<thead><tr><th>難易度</th><th class="num">最速</th><th class="num">中央値</th><th class="num">最遅</th></tr></thead>
+<tbody>
+<tr><td>やさしい</td><td class="num">75.6秒</td><td class="num">84.8秒</td><td class="num">93.2秒</td></tr>
+<tr><td>均衡する世界</td><td class="num">52.0秒</td><td class="num">62.4秒</td><td class="num">72.2秒</td></tr>
+<tr><td>厳しい世界</td><td class="num">45.8秒</td><td class="num">57.4秒</td><td class="num">85.8秒</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>最初の45〜50秒は完全に安全</strong>。この時間を1秒も防衛に使ってはいけない。全部、採集種と拡張に注ぐ。</p>
+
+<h3>穴④ 源泉に7体未満だと、そこから動けない</h3>
+<p>
+AIには「源泉区画にいる群れは、7体未満なら出撃しない」という規則がある。裏を返すと、<strong>AIが源泉を取ると、そこに7体溜まるまで軍は釘付けになる</strong>。source を1つ取らせてから他所を攻めると、AIの反応が鈍る。
+</p>
+
+<h3>穴⑤ 進化を貯め始めると繁殖が止まる</h3>
+<p>
+AIは「時間40秒以降、DNAが必要量の80%に達したら」進化に入り、その間は進化費用を割ってしまう繁殖を見送る。<strong>AIが進化した直後（進化演出が出た直後）は、繁殖予約が薄く、資源も空である</strong>。ここが最大の攻め時になる。画面左の「源泉をめぐる競争」パネルで各勢力の段階が上がった瞬間を見ておくといい。
+</p>
+
+<div class="warn">
+<span class="label">補足：AIが強い点</span>
+<p>AIは巣に採集種を残して軍だけを出す（移動時の「採集種を残す」に相当）判断を必ず行い、群れが5体以下なら全数、それ以上なら半数を送る。この部分の判断は堅実で、<strong>雑に全数で突っ込んで内政を空にするのはプレイヤー側の典型的なミス</strong>のほうだ。</p>
+</div>
+
+</section>
+<hr>
+
+<section id="s7">
+<h2><span class="num">07</span>系統別攻略</h2>
+
+<h3>まず地図の構造を知る</h3>
+<p>
+標準マップの生成規則を読むと、源泉の位置は<strong>ランダムではない</strong>。中心と、中心から3区画の位置にある6つ——計7つで、<strong>そのすべてが水辺の帯の上にある</strong>。そして6勢力の開始区画も同じ水辺の帯の上、中心から5区画の位置に置かれる。
+</p>
+
+<div class="key">
+<span class="label">地図の骨格</span>
+<p><strong>自分の開始区画からまっすぐ中心へ向かって2区画進んだ場所に、必ず源泉が1つある。</strong>これが「自分の源泉」。隣の勢力の源泉までは3区画、中心の源泉までは5区画。<br>
+つまり全員の初動は同じ——<em>目の前の源泉を取り、次に中心か隣の源泉を取りに行く</em>。3つ揃えるには、必ず誰かとぶつかる設計になっている。</p>
+</div>
+
+<figure style="background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:26px 20px 20px; margin:30px 0">
+<svg viewBox="0 0 560 560" role="img" aria-label="標準マップの模式図。中心に源泉が1つ、そこから3区画の水辺の帯の上に源泉が6つ、さらに外側5区画に6勢力の開始区画がある" style="width:100%;height:auto;max-width:520px;margin:0 auto;display:block">
+  <g stroke="#2f5348" stroke-width="1.5" fill="none">
+    <line x1="280" y1="280" x2="495" y2="280"/>
+    <line x1="280" y1="280" x2="387.5" y2="466.2"/>
+    <line x1="280" y1="280" x2="172.5" y2="466.2"/>
+    <line x1="280" y1="280" x2="65" y2="280"/>
+    <line x1="280" y1="280" x2="172.5" y2="93.8"/>
+    <line x1="280" y1="280" x2="387.5" y2="93.8"/>
+  </g>
+  <!-- 水辺の帯の説明 -->
+  <circle cx="280" cy="280" r="245" fill="none" stroke="#1d3a33" stroke-width="1" stroke-dasharray="3 6"/>
+
+  <!-- 源泉（ring3） -->
+  <g fill="#0e1e1a" stroke="#7fd4d0" stroke-width="2">
+    <circle cx="410" cy="280" r="16"/><circle cx="345" cy="392.6" r="16"/><circle cx="215" cy="392.6" r="16"/>
+    <circle cx="150" cy="280" r="16"/><circle cx="215" cy="167.4" r="16"/><circle cx="345" cy="167.4" r="16"/>
+  </g>
+  <!-- 中心の源泉 -->
+  <circle cx="280" cy="280" r="22" fill="#0e1e1a" stroke="#e9c77b" stroke-width="2.5"/>
+  <text x="280" y="286" fill="#e9c77b" font-size="15" text-anchor="middle" font-family="ui-monospace,monospace">◈</text>
+
+  <!-- 開始区画（ring5） -->
+  <g fill="#16302a" stroke="#4a7a63" stroke-width="1.8">
+    <circle cx="387.5" cy="466.2" r="15"/><circle cx="172.5" cy="466.2" r="15"/>
+    <circle cx="65" cy="280" r="15"/><circle cx="172.5" cy="93.8" r="15"/><circle cx="387.5" cy="93.8" r="15"/>
+  </g>
+  <circle cx="495" cy="280" r="18" fill="#1f3d2a" stroke="#a8c98f" stroke-width="2.5"/>
+  <text x="495" y="286" fill="#a8c98f" font-size="13" text-anchor="middle" font-family="ui-monospace,monospace">▲</text>
+
+  <!-- 距離の注記 -->
+  <text x="452" y="268" fill="#a8c98f" font-size="12.5" text-anchor="middle" font-family="ui-monospace,monospace">2区画</text>
+  <text x="345" y="268" fill="#7d968c" font-size="12.5" text-anchor="middle" font-family="ui-monospace,monospace">3区画</text>
+  <path d="M478,296 L425,296" stroke="#a8c98f" stroke-width="1.4" stroke-dasharray="3 3"/>
+  <path d="M394,296 L296,296" stroke="#7d968c" stroke-width="1.4" stroke-dasharray="3 3"/>
+
+  <text x="495" y="325" fill="#a8c98f" font-size="13" text-anchor="middle" font-family="'Noto Sans JP',sans-serif" font-weight="700">あなた</text>
+  <text x="410" y="245" fill="#7fd4d0" font-size="12.5" text-anchor="middle" font-family="'Noto Sans JP',sans-serif">自分の源泉</text>
+  <text x="280" y="240" fill="#e9c77b" font-size="12.5" text-anchor="middle" font-family="'Noto Sans JP',sans-serif">中心の源泉</text>
+  <text x="280" y="535" fill="#7d968c" font-size="12" text-anchor="middle" font-family="'Noto Sans JP',sans-serif">6本の水辺の帯 ＝ 源泉7つはすべてこの上にある</text>
+</svg>
+<figcaption style="text-align:center"><b>標準マップの骨格（半径6・127区画）。</b>源泉は乱数ではなく、中心1つ＋水辺の帯の上に6つ。6勢力は同じ帯の外側に等間隔で置かれる。<strong>自分の正面2区画に必ず源泉が1つあり、隣の勢力の源泉までは3区画、中心までは5区画</strong>。勝利に必要な3つを揃えるには、必ず誰かの取り分に手を出すことになる。</figcaption>
+</figure>
+
+<p>
+源泉がすべて水辺であることの帰結は大きい。<strong>水辺の適性が、そのまま源泉での戦闘力になる</strong>からだ（戦闘係数 = 0.75 + 適性 × 0.25）。
+</p>
+
+<div class="tw">
+<table>
+<caption>源泉（水辺）での戦闘係数と、開始区画からの初動</caption>
+<thead><tr><th>系統</th><th class="num">水辺適性</th><th class="num">源泉での戦闘係数</th><th class="num">攻撃倍率</th><th class="num">繁殖倍率</th><th class="num">速度</th></tr></thead>
+<tbody>
+<tr class="hl"><td>両生類</td><td class="num win">1.50</td><td class="num win">1.125</td><td class="num">0.96</td><td class="num">1.12</td><td class="num">1.00</td></tr>
+<tr><td>鳥類</td><td class="num">1.10</td><td class="num">1.025</td><td class="num">1.08</td><td class="num">1.08</td><td class="num win">1.35</td></tr>
+<tr><td>節足動物</td><td class="num">1.05</td><td class="num">1.013</td><td class="num">0.96</td><td class="num win">1.38</td><td class="num">1.05</td></tr>
+<tr><td>恐竜</td><td class="num">0.95</td><td class="num">0.988</td><td class="num win">1.22</td><td class="num lose">0.82</td><td class="num lose">0.88</td></tr>
+<tr><td>哺乳類</td><td class="num">0.95</td><td class="num">0.988</td><td class="num">1.04</td><td class="num">1.00</td><td class="num">1.08</td></tr>
+<tr><td>魚類</td><td class="num lose">0.85</td><td class="num lose">0.963</td><td class="num">0.96</td><td class="num">1.00</td><td class="num">1.20</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>採集種の必要数は系統で違う</h3>
+<p>
+第2章の「7体」は繁殖倍率1.0の系統の値だった。繁殖が速い系統は<em>食料を早く消費する</em>ので、必要な採集種も増える。理論値は <code>4.5 × 繁殖倍率 ÷ 0.695</code>。実測（各12戦）と並べるとこうなる。
+</p>
+
+<div class="tw">
+<table>
+<caption>系統別・採集種の維持数と勝率（seed 1〜12・normal・他の判断は標準AIと同一）</caption>
+<thead><tr><th>系統</th><th class="num">繁殖倍率</th><th class="num">理論値</th><th class="num">採集5</th><th class="num">採集6</th><th class="num">採集7</th><th class="num">採集9</th></tr></thead>
+<tbody>
+<tr><td>恐竜</td><td class="num">0.82</td><td class="num">5.3体</td><td class="num">25%</td><td class="num win">100%</td><td class="num win">100%</td><td class="num win">100%</td></tr>
+<tr><td>魚類</td><td class="num">1.00</td><td class="num">6.5体</td><td class="num">41.7%</td><td class="num">50%</td><td class="num win">100%</td><td class="num win">100%</td></tr>
+<tr><td>哺乳類</td><td class="num">1.00</td><td class="num">6.5体</td><td class="num lose">8.3%</td><td class="num">66.7%</td><td class="num win">100%</td><td class="num">91.7%</td></tr>
+<tr><td>鳥類</td><td class="num">1.08</td><td class="num">7.0体</td><td class="num">33.3%</td><td class="num">66.7%</td><td class="num win">100%</td><td class="num win">100%</td></tr>
+<tr><td>両生類</td><td class="num">1.12</td><td class="num">7.3体</td><td class="num">75%</td><td class="num">91.7%</td><td class="num win">100%</td><td class="num win">100%</td></tr>
+<tr><td>節足動物</td><td class="num">1.38</td><td class="num">8.9体</td><td class="num">33.3%</td><td class="num">50%</td><td class="num win">100%</td><td class="num">91.7%</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>
+理論値と実測の閾値はおおむね一致する（恐竜だけ6体で足り、他は7体が必要）。節足動物は理論値8.9に対して7体で100%に届くが、これは繁殖の速さで拡張が早く回り、<em>2枚目3枚目の土地の収入が先に入る</em>ためだ。
+</p>
+<div class="key">
+<span class="label">覚え方</span>
+<p><strong>どの系統でも、巣の採集種は7体。</strong>恐竜だけ6体でも足りる。迷ったら7で固定してよく、実測では全系統がそれで勝率100%に達している。</p>
+</div>
+
+<h3>系統ごとの方針</h3>
+
+<div class="sp">
+  <div class="sp-h"><b>両生類</b><span class="lat">AMPHIBIA</span><span class="rank">総合評価 S — もっとも素直に強い</span></div>
+  <div class="sp-b">
+    <span class="tag">水辺 1.50</span><span class="tag">森林 0.9</span><span class="tag">草原 0.85</span><span class="tag">海洋 0.65</span><span class="tag">高地 ✕</span>
+    <p><strong>源泉での戦闘係数1.125は全系統最高。</strong>源泉がすべて水辺であるこのゲームの設計と、水辺適性1.5が完全に噛み合っている。繁殖倍率1.12も高く、食料収入も水辺なら1体あたり0.875/秒（適性1.5）まで伸びる。</p>
+    <p><strong>方針：</strong>水辺の帯から出ない。目の前の源泉を取り、そのまま帯沿いに中心へ、あるいは隣の源泉へ伸ばす。陸に上がる必要はほとんどなく、上がるとしても食料稼ぎの森林を1〜2枚。<em>「水辺だけで勝てる系統」</em>であり、初心者が最初に勝ち方を覚えるのに向いている（実測：採集6体運用でも91.7%）。</p>
+    <p><strong>弱点：</strong>攻撃倍率0.96と高地に入れない点。敵拠点の正面突破は無理なので、源泉を押さえて守り切る形に徹する。</p>
+  </div>
+</div>
+
+<div class="sp">
+  <div class="sp-h"><b>恐竜</b><span class="lat">SAURIAN</span><span class="rank">総合評価 S — 内政さえ回れば最強</span></div>
+  <div class="sp-b">
+    <span class="tag">草原 1.30</span><span class="tag">森林 1.05</span><span class="tag">水辺 0.95</span><span class="tag">高地 0.8</span><span class="tag">海洋 ✕</span>
+    <p><strong>攻撃倍率1.22は唯一、同数・互角の条件で守備補正を押し切って勝てる数字。</strong>第3章の実測で、同数の殴り合いに勝ったのは恐竜だけだった。一方で繁殖倍率0.82・速度0.88という重さがあり、AI同士の対戦では勝率20.8%、標準AIの内政方針では<strong>勝率0%</strong>という極端な系統。</p>
+    <p><strong>方針：</strong>採集種は6体で足りる（繁殖が遅いぶん食料消費も遅い）。序盤は草原（適性1.3）を押さえて内政を作り、繁殖の遅さを食料の余剰で押し切る。数が揃ってからは、<em>相性を気にせず正面から殴れる</em>唯一の系統として振る舞える。実測では採集6体運用で12戦全勝。</p>
+    <p><strong>弱点：</strong>移動が全系統最遅（守護種は1区画5.84秒）。源泉の妨害合戦で後手に回るので、妨害されない位置取り＝源泉を面で囲う展開を作る。</p>
+  </div>
+</div>
+
+<div class="sp">
+  <div class="sp-h"><b>鳥類</b><span class="lat">AVIAN</span><span class="rank">総合評価 A — AI最弱、プレイヤー最強格</span></div>
+  <div class="sp-b">
+    <span class="tag">高地 1.40</span><span class="tag">水辺 1.10</span><span class="tag">森林 1.10</span><span class="tag">草原 1.0</span><span class="tag">海洋 ✕</span>
+    <p><strong>AI同士の対戦では勝率5.6%と全系統最弱</strong>だが、これは標準AIが鳥類の唯一にして最大の武器を使えないためだ。その武器とは<strong>第2段階からの2区画移動</strong>。遊撃種なら2区画を3.33秒、1区画あたり1.67秒で、全系統中もっとも速く盤面を渡る。</p>
+    <p><strong>方針：</strong>最優先で第2段階へ進化する（DNA28）。飛行が解禁された瞬間から、<em>敵の源泉カウントを妨害し続ける遊撃部隊</em>を1〜2体単位で運用できる。第1章のとおり、敵の90秒カウントは1体の到着で0に戻る。2区画をまたげる鳥類は、隣接していない源泉にも届く——これは他の5系統にできない。</p>
+    <p><strong>弱点：</strong>海洋に入れない。高地適性1.4は魅力だが、高地は食料0.6係数なので拠点にはしない（適性1.4でも0.84/秒）。実測では採集7体で12戦全勝。AI相手の勝率5.6%という数字に騙されないこと。</p>
+  </div>
+</div>
+
+<div class="sp">
+  <div class="sp-h"><b>節足動物</b><span class="lat">ARTHROPODA</span><span class="rank">総合評価 A — 数で押す</span></div>
+  <div class="sp-b">
+    <span class="tag">森林 1.25</span><span class="tag">草原 1.10</span><span class="tag">水辺 1.05</span><span class="tag">高地 0.85</span><span class="tag">海洋 ✕</span>
+    <p><strong>繁殖倍率1.38は全系統最高</strong>で、繁殖時間が他系統の0.72倍になる（遊撃種なら2.9秒で1体）。個体の攻撃倍率は0.96と低いので、第3章の「相性を数で覆すには1.8倍」を<em>実際に用意できる</em>唯一の系統と言える。</p>
+    <p><strong>方針：</strong>採集種は7体（理論上は9体近く要るが、拡張の速さが補う）。森林（適性1.25）を軸に巣を増やし、収容数を先に広げる。人口上限に張り付いたら即座に領土を増やすこと——繁殖が速すぎて<strong>枠が先に尽きる</strong>のがこの系統の失速パターン。</p>
+    <p><strong>弱点：</strong>1体あたりが弱いので、相性で不利を取ると数の優位が消える。前線は必ず役割を混ぜる。</p>
+  </div>
+</div>
+
+<div class="sp">
+  <div class="sp-h"><b>哺乳類</b><span class="lat">MAMMALIA</span><span class="rank">総合評価 A — 基準となる万能型</span></div>
+  <div class="sp-b">
+    <span class="tag">森林 1.20</span><span class="tag">草原 1.20</span><span class="tag">高地 0.95</span><span class="tag">水辺 0.95</span><span class="tag">海洋 ✕</span>
+    <p>攻撃1.04・繁殖1.00・速度1.08と、すべてが平均よりわずかに上。突出した武器はないが穴もなく、<strong>他の系統を評価するときの物差し</strong>になる。森林・草原の両方で適性1.2を持ち、拡張先を選びやすいのが実際の強み。</p>
+    <p><strong>方針：</strong>採集種7体を守り、森林と草原を貪欲に取る。源泉は水辺適性0.95＝戦闘係数0.988なので、両生類と源泉を取り合うと不利。<em>陸側から源泉を包囲する</em>形を作り、水辺の上で正面から殴り合わないようにする。</p>
+    <p><strong>弱点：</strong>特化がないぶん、相手の得意地形での消耗戦に弱い。採集5体だと勝率8.3%まで落ち、<strong>内政の失敗が最も露骨に響く系統</strong>でもある。</p>
+  </div>
+</div>
+
+<div class="sp">
+  <div class="sp-h"><b>魚類</b><span class="lat">PELAGIC</span><span class="rank">総合評価 B — 強いが地形に縛られる</span></div>
+  <div class="sp-b">
+    <span class="tag">海洋 1.35</span><span class="tag">水辺 0.85</span><span class="tag">森林 ✕</span><span class="tag">草原 ✕</span><span class="tag">高地 ✕</span>
+    <p><strong>海洋と水辺にしか定着できない。</strong>盤面の外周リングはほぼ海洋なので土地は余っているが、内陸を通れないため<em>移動経路が水辺の帯に限定される</em>。海洋の食料係数1.3 × 適性1.35で1体0.853/秒という最高効率の内政を持ち、速度1.20も上位。</p>
+    <p><strong>方針：</strong>開始区画の脇は海洋になる（系統に応じて自動的に配置される）ので、そこを早く押さえて内政を立てる。海の内政で膨らませ、水辺の帯を通って源泉へ——という一本道。水辺適性0.85＝源泉での戦闘係数0.963は全系統最低なので、<strong>源泉での正面戦闘は避け、数を揃えてから一気に取る</strong>。</p>
+    <p><strong>弱点：</strong>内陸の源泉包囲ができず、経路が読まれやすい。妨害部隊も水辺しか通れないため、敵の源泉カウントを止めに行く速度で他系統に劣る。実測では採集7体で12戦全勝しており、弱くはない。</p>
+  </div>
+</div>
+
+<div class="tw">
+<table>
+<caption>参考：AI同士の勝率（72戦）と、プレイヤーが採集種を厚くした場合（12戦）</caption>
+<thead><tr><th>系統</th><th class="num">AI同士（採集4体）</th><th class="num">プレイヤー操作（採集7体）</th><th class="num">差</th></tr></thead>
+<tbody>
+<tr><td>両生類</td><td class="num">23.6%</td><td class="num win">100%</td><td class="num">+76.4</td></tr>
+<tr><td>魚類</td><td class="num">22.2%</td><td class="num win">100%</td><td class="num">+77.8</td></tr>
+<tr><td>恐竜</td><td class="num">20.8%</td><td class="num win">100%</td><td class="num">+79.2</td></tr>
+<tr><td>哺乳類</td><td class="num">15.3%</td><td class="num win">100%</td><td class="num">+84.7</td></tr>
+<tr><td>節足動物</td><td class="num">12.5%</td><td class="num win">100%</td><td class="num">+87.5</td></tr>
+<tr class="hl"><td>鳥類</td><td class="num lose">5.6%</td><td class="num win">100%</td><td class="num win">+94.4</td></tr>
+</tbody>
+</table>
+</div>
+<p class="note">
+左列は6勢力すべてが同一のAI方針で戦った場合の統計で、<strong>系統の強弱ではなく「標準AIの方針との相性」</strong>を表している。右列は同じ相手に対し、プレイヤー側だけが採集種7体で戦った結果。<strong>系統の差より、内政方針の差のほうが桁違いに大きい</strong>ことが分かる。
+</p>
+
+</section>
+<hr>
+
+<section id="s8">
+<h2><span class="num">08</span>実戦タイムラインとチェックリスト</h2>
+
+<p>ここまでの実測を1本の手順に落とす。哺乳類・均衡する世界・標準マップを想定しているが、骨格は全系統で共通である。</p>
+
+<ul class="timeline">
+<li>
+  <span class="t">0:00 — 0:45 ／ 完全に安全な時間</span>
+  <b>採集種だけを作る</b>
+  <p>AIは最速でも45秒までは攻めてこない。開始時の巣で<strong>採集種を予約できるだけ予約する</strong>（予約は4体まで）。初期の捕食3・守護1・遊撃1はそのまま巣に置いておく。この45秒で戦闘役割を作るのは、後半の物量を捨てているのと同じ。</p>
+</li>
+<li>
+  <span class="t">0:20 — 1:30 ／ 拡張</span>
+  <b>隣の中立地へ「半数」を送る（採集種を残すはON）</b>
+  <p>中立地への進出は食料10で収容+7。<strong>巣より安い</strong>。得意地形（哺乳類なら森林・草原）を優先し、源泉の方向へ伸ばす。全数移動は禁止——通過した区画が無人になると収入もDNAも止まる。</p>
+</li>
+<li>
+  <span class="t">1:00 — 2:30 ／ 2つ目・3つ目の巣</span>
+  <b>鉱物は「巣の増強」ではなく「新しい巣」に使う</b>
+  <p>鉱物35で新設（収容+8・繁殖口+1）、鉱物70で増強（収容+8のみ）。序盤は新設が倍のコスト効率。巣が増えたら<strong>それぞれの巣で採集種7体</strong>を目指す。ここが第2章の本体。</p>
+</li>
+<li>
+  <span class="t">1:30 — 3:00 ／ 最初の源泉</span>
+  <b>源泉を1つ確保して、そこに戦力を置いたまま動かさない</b>
+  <p>DNA +0.30/秒が入り、進化レースに乗る。守りは<strong>捕食種＋守護種の混成</strong>。単一役割だとカウンターで崩される。余裕があれば源泉に巣を建てる（被ダメ軽減1.24倍）。</p>
+</li>
+<li>
+  <span class="t">2:00 — ／ 進化</span>
+  <b>資源が貯まり次第、止めずに進化し続ける</b>
+  <p>1段階上がるだけで同数の殴り合いに勝てるようになる（実測：分化②の捕食種10が原始①の捕食種10に4体残しで勝利）。進化の総額は食料443・鉱物204・DNA190。<strong>採集種7体を維持していれば食料は自然に足りる</strong>ので、詰まるとすればDNA＝源泉の数。</p>
+</li>
+<li>
+  <span class="t">3:00 — 7:00 ／ 面で押す</span>
+  <b>敵の主拠点は無視して、空き地と源泉だけを取る</b>
+  <p>混成された拠点は2倍の兵力でも抜けない（第3章）。取りに行くのは<em>無人の中立地</em>と<em>源泉</em>。AIが出撃して手薄になった区画、AIが進化を開始した直後の勢力を選ぶ。目標は源泉3つではなく<strong>4つ以上</strong>——1つ削られてもカウントが0に戻らないため。</p>
+</li>
+<li>
+  <span class="t">常時 ／ 妨害</span>
+  <b>「源泉をめぐる競争」パネルを見て、他勢力の保持秒数を0に戻す</b>
+  <p>誰かが源泉3つに達したら、その勢力の源泉のどれか1つへ<strong>遊撃種を1体でも送る</strong>。到着＝交戦＝カウント完全リセット。勝つ必要はない。90秒に対して移動が2〜5秒なので、隣接領土を1枚持っているだけで永久に妨害できる。</p>
+</li>
+</ul>
+
+<h3>勝つためのチェックリスト</h3>
+<ul class="check">
+<li>すべての巣で採集種が<strong>7体前後</strong>いる（これが崩れたら他の全部を止めてでも戻す）</li>
+<li>移動命令の「<strong>採集種を残す</strong>」が常にON、移動は原則「<strong>半数</strong>」</li>
+<li>自分の領土に<strong>無人の区画がない</strong>（DNA 0.06/秒と収入が丸ごと消える）</li>
+<li>源泉を<strong>4つ以上</strong>狙っている（3つちょうどは1回の妨害で終わる）</li>
+<li>源泉の守備が<strong>混成</strong>（守護種＋捕食種）になっている</li>
+<li>進化が止まっていない（資源が余っているのに段階が上がっていないのは損失）</li>
+<li>前線の防衛は<strong>守護種を厚めに</strong>（AIは相性を計算せず、捕食種で突っ込んでくる）</li>
+</ul>
+
+<h3>実例：内政だけでは勝てない</h3>
+<p>
+この記事のスクリーンショットを撮るために、実際に1試合プレイした。第2章の「採集種7体」だけを守り、残りは簡単な自動操作に任せた結果がこれである。
+</p>
+
+<figure>
+<img src="images/result.webp" alt="対戦結果画面。節足動物の勝利、哺乳類は敗北">
+<figcaption><b>9分14秒、敗北。</b>勝ったのは節足動物——源泉5つを90/90秒保持しての勝利。こちらは個体数111・誕生120体（全勢力で最多）・領土14まで膨らませたのに、繁栄度は415対961のダブルスコアで負けている。</figcaption>
+</figure>
+
+<div class="tw">
+<table>
+<caption>敗因の内訳（哺乳類＝筆者、節足動物＝勝者）</caption>
+<thead><tr><th>指標</th><th class="num">哺乳類（敗）</th><th class="num">節足動物（勝）</th><th>どう効いたか</th></tr></thead>
+<tbody>
+<tr><td>誕生した個体</td><td class="num win">120体</td><td class="num">115体</td><td class="dim">内政は勝っていた</td></tr>
+<tr><td>領土</td><td class="num">14</td><td class="num win">51</td><td>拡張の方向が違った</td></tr>
+<tr class="hl"><td>源泉</td><td class="num lose">1</td><td class="num win">5</td><td class="lose">これが勝敗のすべて</td></tr>
+<tr class="hl"><td>進化段階</td><td class="num lose">① 原始</td><td class="num win">⑤ 極相</td><td class="lose">鉱物を巣に使い切った</td></tr>
+<tr><td>占領した回数</td><td class="num">20</td><td class="num win">80</td><td>攻めの絶対量が4倍</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="warn">
+<span class="label">この試合で犯した3つのミス</span>
+<p>
+<strong>① 鉱物を巣の新設に回し続け、進化が一度も走らなかった。</strong>巣は収容数を増やすが、DNAがあっても鉱物30を残していなければ進化できない。<br>
+<strong>② 拡張の方向が源泉から外れた。</strong>安全な中立地ばかり取り、源泉は最初の1つで止まった。第4章のとおり、源泉1つではDNA収入も足りない。<br>
+<strong>③ 妨害をしなかった。</strong>画面には節足動物の保持秒数が33秒→89秒と表示され続けていた。この間に遊撃種を1体でも送っていれば、カウントは0に戻せた。
+</p>
+</div>
+
+<div class="key">
+<span class="label">結論</span>
+<p>第2章の「採集種7体」は<strong>必要条件であって十分条件ではない</strong>。物量の上に、<em>源泉へ向ける・進化を止めない・妨害する</em>の3つを乗せて初めて勝ちになる。逆に言えば、この3つは採集種7体の土台がなければ実行する資源すら作れない——順番が大事なのだ。</p>
+</div>
+
+<h3>負けパターン</h3>
+<ul class="check">
+<li class="no"><b>序盤に戦闘役割を作りすぎる。</b>最初の45秒は絶対に攻められない。ここで作った捕食種は、後半の100体ぶんの成長を食い潰す。</li>
+<li class="no"><b>全数移動を繰り返して後方が無人になる。</b>領土の数は増えているのに収入が増えない、という典型的な失速。</li>
+<li class="no"><b>高地に拠点を作る。</b>食料0.36/秒・収容12。第2章のラインを満たせず、繁殖が永久に詰まる。</li>
+<li class="no"><b>遊撃種の大群で拠点に突っ込む。</b>捕食種が1体でも混ざっていれば2.4倍で溶ける（実測：遊撃20が2.2秒で全滅）。</li>
+<li class="no"><b>源泉3つを取って守りに入る。</b>守勢に回った時点で、6勢力ぜんぶの妨害対象になる。カウントは1体でリセットされるので、守り切るより<strong>盤面を広げて4つ5つにする</strong>ほうが速い。</li>
+<li class="no"><b>「進化で勝つ」と決めて内政を絞る。</b>実測で「進化を急ぐ」方針は採集7体方針より弱い（87.5% vs 100%）。進化は目的ではなく、余った資源の置き場所。</li>
+</ul>
+
+</section>
+
+<hr>
+
+<section id="s9">
+<h2><span class="num">09</span>図鑑と3Dモデルについて</h2>
+<p>
+攻略とは直接関係ないが、このゲームには <strong>6系統 × 5段階 × 4役割 = 120形態</strong> のメカ生物が入っていて、メニューの「進化図鑑」から全部を回転・拡大して見られる。<strong>GLB形式で書き出す機能</strong>もあり、Blender などにそのまま持っていける。
+</p>
+<div class="grid3">
+  <figure><img src="images/stage-1.webp" alt="哺乳類・原始段階のバロウ"><figcaption><b>① 原始 — バロウ</b><br>体長0.65倍、装甲なし</figcaption></figure>
+  <figure><img src="images/stage-3.webp" alt="哺乳類・適応段階のパックファング"><figcaption><b>③ 適応 — パックファング</b><br>体節と装甲が増える</figcaption></figure>
+  <figure><img src="images/stage-5.webp" alt="哺乳類・極相段階のオーロラファング"><figcaption><b>⑤ 極相 — オーロラファング</b><br>1.28倍、発光管と棘</figcaption></figure>
+</div>
+<p>
+形態名は系統ごとに固有で、たとえば魚類は リップル → リーフフィン → タイドランサー → アビスガード → <strong>リヴァイアサン</strong>、恐竜は スケイル → スプリントラプトル → リッジホーン → アーマーレックス → <strong>テラタイタン</strong>。段階が上がると骨格・装甲の密度・発光管が変化する。
+</p>
+<div class="grid3">
+  <figure><img src="images/sp-fish.webp" alt="魚類の極相形態"><figcaption><b>魚類</b> リヴァイアサン</figcaption></figure>
+  <figure><img src="images/sp-dinosaur.webp" alt="恐竜の極相形態"><figcaption><b>恐竜</b> テラタイタン</figcaption></figure>
+  <figure><img src="images/sp-arthropod.webp" alt="節足動物の極相形態"><figcaption><b>節足動物</b> オベリスク</figcaption></figure>
+</div>
+<p class="note">
+画面上部で「高画質／標準／軽量」を切り替えられる。ソフトウェアGPU環境では自動で「軽量」が選ばれる。<strong>設定を変えてもゲームのルール・モデル形状・判定はいっさい変わらない</strong>ので、動作が重い場合は迷わず軽量にしてよい。この記事のスクリーンショットはすべて高画質で撮っている。
+</p>
+</section>
+
+</main>
+
+<footer>
+<div class="inner">
+<h3>検証方法と再現手順</h3>
+<p>
+このゲームは描画から独立した決定論エンジンを持ち、同じseed・同じ命令列なら必ず同じ結果になる。本稿の数値はすべて、そのエンジンを直接呼び出して測ったものである。
+</p>
+<ul>
+<li><b>戦闘の実測（第3章）</b>：同一系統・同一段階の2勢力を同じ区画で交戦させ、地形・巣・段階・編成だけを変えて決着まで回した。約40戦。</li>
+<li><b>方針の実測（第2・4・7章）</b>：標準AIの判断ロジックをプレイヤー側に複製し、パラメータを1つだけ変えて同一seedで対戦。のべ<strong>1,092対戦</strong>。</li>
+<li><b>決着理由の集計（第1章）</b>：同梱の <code>artifacts/balance.json</code>（12 seeds × 6配置＝72対戦）を集計。</li>
+<li><b>環境</b>：Node.js 20.20.0 / Linux。スクリーンショットは Chromium + SwiftShader（ソフトウェアGPU）、1600×1000、高画質設定。</li>
+</ul>
+<p>
+再現する場合は、リポジトリで <code>npm run compile &amp;&amp; npm test</code> でルールをコンパイルしてから、<code>npm run balance -- 12</code> でAI同士の対戦統計が、<code>npm run dev</code> でゲーム本体が動く。
+</p>
+
+<h3>この記事の限界</h3>
+<ul>
+<li>すべて<strong>対AI戦</strong>の結論であり、人間同士の対戦バランスではない。第6章で挙げた5つの穴は、相手が人間なら存在しない。</li>
+<li>数値はルール指紋 <code>12013311</code> 時点のもの。DSL（<code>content/earth.habitat</code>）が調整されれば、特に「採集種7体」のラインは動く。そのときは <code>4.5 × 系統の繁殖倍率 ÷ 採集種1体の純収入</code> を再計算すればよい。</li>
+<li>1試合ごとの勝率はseed（開始位置と隣接勢力）に強く依存する。24 seedの全勝は「この方針でほぼ確実に勝てる」ことを示すが、特定の1試合の保証ではない。</li>
+<li>実機GPUでの動作速度、人間の初見プレイでの操作性については本稿では扱っていない。</li>
+</ul>
+
+<p style="margin-top:28px; padding-top:20px; border-top:1px solid var(--line); font-size:12.5px">
+『種の黎明 — BIOSPHERE』攻略 ／ 検証・執筆 2026-09-13 ／ ルール指紋 12013311<br>
+スクリーンショットはゲーム本体（高画質設定）から取得。数値はすべてゲームエンジンの実測値。
+</p>
+</div>
+</footer>
+</body>
+</html>
